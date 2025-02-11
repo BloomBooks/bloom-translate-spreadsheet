@@ -8,7 +8,7 @@ export interface TranslatableColumn {
   isEmpty: boolean;
 }
 
-export function findTranslatableColumns(
+export function findAITargetColumns(
   data: SpreadsheetData
 ): TranslatableColumn[] {
   const translatable: TranslatableColumn[] = [];
@@ -36,17 +36,6 @@ export function findTranslatableColumns(
   }
 
   return translatable;
-}
-
-export function selectColumnsToTranslate(
-  columns: TranslatableColumn[],
-  shouldRetranslate: boolean
-): TranslatableColumn[] {
-  if (columns.length === 0) {
-    return [];
-  }
-
-  return columns.filter((col) => col.isEmpty || shouldRetranslate);
 }
 
 export async function translateColumn(

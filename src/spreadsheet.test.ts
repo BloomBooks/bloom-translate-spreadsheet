@@ -1,5 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { findTranslatableColumns } from "../src/columns";
+import { findAITargetColumns } from "../src/columns";
 import type { SpreadsheetData } from "../src/spreadsheet";
 
 describe("findTranslatableColumns", () => {
@@ -37,7 +37,7 @@ describe("findTranslatableColumns", () => {
   };
 
   test("identifies translatable columns", () => {
-    const result = findTranslatableColumns(mockData);
+    const result = findAITargetColumns(mockData);
     expect(result).toHaveLength(2); // Only google and acts2 columns should be found
     expect(
       result.find((c) => c.columnName === "[fr-x-ai-google]")
@@ -46,7 +46,7 @@ describe("findTranslatableColumns", () => {
   });
 
   test("correctly identifies empty status", () => {
-    const result = findTranslatableColumns(mockData);
+    const result = findAITargetColumns(mockData);
     const googleCol = result.find((c) => c.columnName === "[fr-x-ai-google]");
     const acts2Col = result.find((c) => c.columnName === "[es-x-ai-acts2]");
 
@@ -63,7 +63,7 @@ describe("findTranslatableColumns", () => {
         { "[en]": "World", "[fr-x-ai-google]": "" },
       ],
     };
-    const result = findTranslatableColumns(data);
+    const result = findAITargetColumns(data);
     expect(result[0].isEmpty).toBe(true);
   });
 
@@ -75,7 +75,7 @@ describe("findTranslatableColumns", () => {
         { "[en]": "Hello", "[fr]": "Bonjour" },
       ],
     };
-    const result = findTranslatableColumns(data);
+    const result = findAITargetColumns(data);
     expect(result).toHaveLength(0);
   });
 });

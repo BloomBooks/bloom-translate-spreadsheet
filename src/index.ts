@@ -3,11 +3,7 @@ import { Command } from "commander";
 import { createRequire } from "module";
 import { resolve, basename } from "node:path";
 import * as spreadsheet from "./spreadsheet";
-import {
-  findTranslatableColumns,
-  selectColumnsToTranslate,
-  translateColumn,
-} from "./columns";
+import { findAITargetColumns, translateColumn } from "./columns";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
@@ -65,45 +61,31 @@ Example:
 
     await translateColumn(data, columnName, targetLangAndModel);
   } else {
-    // Find all translatable columns and process them
-    const columns = findTranslatableColumns(data);
+    // Find all translatable columns
+    const columns = findAITargetColumns(data);
 
     if (columns.length === 0) {
       console.log("No translatable columns found in the spreadsheet.");
       process.exit(0);
     }
 
-    // Report what we found
-    console.log("Found translatable columns:");
+    // Report what we are going to do with each
+    console.log("Found ai columns:");
     for (const col of columns) {
       console.log(
         `- ${col.columnName}: ${col.isEmpty ? "empty" : "has content"}${shouldRetranslate ? " (will retranslate)" : ""}`
       );
     }
 
-    // Get the columns we should translate based on their status and retranslate flag
-    const columnsToTranslate = selectColumnsToTranslate(
-      columns,
-      shouldRetranslate
-    );
-
     // Translate selected columns
-    for (const col of columnsToTranslate) {
+    for (const col of columns.filter(
+      (col) => col.isEmpty || shouldRetranslate
+    )) {
       console.log(`Translating ${col.columnName}...`);
       await translateColumn(
         data,
         col.columnName,
         `${col.languageCode}-x-ai-${col.model}`
-      );
-    }
-
-    // Report skipped columns
-    const skippedColumns = columns.filter(
-      (col) => !columnsToTranslate.includes(col)
-    );
-    for (const col of skippedColumns) {
-      console.log(
-        `Skipping ${col.columnName} as it has content (use --retranslate to override)`
       );
     }
   }
