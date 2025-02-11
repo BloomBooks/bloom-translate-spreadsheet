@@ -1,6 +1,5 @@
-import { v2 } from "@google-cloud/translate";
-import { translateWithGoogleTranslate } from "./src/googleTranslate";
-import { translateWithActs2 } from "./src/translate-acts2";
+import { translateWithGoogleTranslate } from "./translate-google";
+import { translateWithActs2 } from "./translate-acts2";
 
 type TranslationModel = "google" | "acts2" | "piglatin";
 

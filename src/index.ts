@@ -2,8 +2,8 @@
 import { Command } from "commander";
 import { createRequire } from "module";
 import { resolve, basename } from "node:path";
-import { translateToLanguage } from "./translate";
-import * as spreadsheet from "./src/spreadsheet";
+import { translateToLanguage } from "../translate";
+import * as spreadsheet from "./spreadsheet";
 
 const require = createRequire(import.meta.url);
 const { version } = require("./package.json");
