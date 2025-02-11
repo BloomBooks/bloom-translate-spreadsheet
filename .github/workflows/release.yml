@@ -24,7 +24,8 @@ jobs:
       - name: Build Executable
         run: |
           bun build index.ts --compile --target=bun-windows-x64 --outfile bts
-          chmod +x bts
+          # Windows builds automatically add .exe extension
+          chmod +x bts.exe
           
       - name: Create Release
         id: create_release
@@ -43,6 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./bts
-          asset_name: bts
+          asset_path: ./bts.exe
+          asset_name: bts.exe
           asset_content_type: application/octet-stream

@@ -2,13 +2,14 @@
 
 A command-line tool for translating Bloom spreadsheet content to different languages using various translation models.
 
-- Currently supports thes translation services:
+- Currently supports these translation services:
   - Google Translate (`-x-ai-gt`)
   - Pig Latin (`-x-ai-piglatin`)
 
 ## Installation
 
-Download the `bts` executable from the [Releases](../../releases) page of this repository.
+Download the executable from the [Releases](../../releases) page of this repository:
+- Windows: `bts.exe`
 
 For Google Translate functionality, set these environment variables:
 - `BLOOM_GOOGLE_TRANSLATION_SERVICE_ACCOUNT_EMAIL`
@@ -19,7 +20,8 @@ You will need to restart your terminal before it will see any changes you make t
 
 Basic usage:
 ```bash
-./bts <inputPath> [options]
+# On Windows:
+.\bts.exe <inputPath> [options]
 ```
 
 Options:
