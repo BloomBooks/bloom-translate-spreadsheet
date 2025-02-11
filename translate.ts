@@ -1,12 +1,12 @@
 import { v2 } from '@google-cloud/translate';
 import { translateWithGoogleTranslate } from './src/googleTranslate';
 
-type TranslationModel = 'gt' | 'acts2';
-
+type TranslationModel = 'gt' | 'acts2' | 'piglatin';
 
 export function parseModelFromLanguageCode(langCode: string): TranslationModel | null {
     if (langCode.includes('-acts2')) return 'acts2';
     if (langCode.includes('-gt')) return 'gt';
+    if (langCode.includes('-piglatin')) return 'piglatin';
     return null;
 }
 
@@ -30,9 +30,23 @@ export async function translateToLanguage(englishTexts: string[], targetCode: st
         return englishTexts.map(text => `[Acts2 pretend] ${text}`);
     }
     if (model === 'piglatin') {
-        return englishTexts.map(text => text.split(' ').map(word => `${word.slice(1)}${word[0]}ay`).join(' '));
+        return englishTexts.map(text => {
+            if (!text) return '';
+            return text.split(' ').map(word => {
+                // Extract leading/trailing punctuation
+                const leading = word.match(/^[^a-zA-Z]*/)[0];
+                const trailing = word.match(/[^a-zA-Z]*$/)[0];
+                const letters = word.slice(leading.length, word.length - trailing.length);
+
+                if (!letters) return word; // Return original if no letters
+
+                // Transform the letters part only
+                const transformed = `${letters.slice(1)}${letters[0]}ay`;
+                return leading + transformed + trailing;
+            }).join(' ');
+        });
     }
     else {
-        throw new Error('Unknown translation model ${model}');
+        throw new Error(`Unknown translation model ${model}`);
     }
 }
