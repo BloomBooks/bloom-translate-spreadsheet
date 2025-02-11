@@ -38,19 +38,19 @@ describe("findAITargetColumns", () => {
         columnName: "[fr-x-ai-google]",
         languageCode: "fr",
         model: "google",
-        isEmpty: true,
+        hasMissingTranslations: true,
       },
       {
         columnName: "[es-x-ai-acts2]",
         languageCode: "es",
         model: "acts2",
-        isEmpty: false,
+        hasMissingTranslations: false,
       },
       {
         columnName: "[de-x-ai-google]",
         languageCode: "de",
         model: "google",
-        isEmpty: false,
+        hasMissingTranslations: false,
       },
     ]);
   });
@@ -196,26 +196,26 @@ describe("findAITargetColumns", () => {
 
     const result = findAITargetColumns(data);
 
-    // Both fr and de columns should be marked as empty (needing translation)
+    // Both fr and de columns should be marked as having missing translations
     // because they have at least one missing translation
     expect(result).toEqual([
       {
         columnName: "[fr-x-ai-google]",
         languageCode: "fr",
         model: "google",
-        isEmpty: true,
+        hasMissingTranslations: true,
       },
       {
         columnName: "[es-x-ai-acts2]",
         languageCode: "es",
         model: "acts2",
-        isEmpty: false,
+        hasMissingTranslations: false,
       },
       {
         columnName: "[de-x-ai-google]",
         languageCode: "de",
         model: "google",
-        isEmpty: true,
+        hasMissingTranslations: true,
       },
     ]);
   });
@@ -232,7 +232,7 @@ describe("findAITargetColumns", () => {
         {
           // First row (language names)
           "[en]": "English",
-          "[fr-x-ai-google]": "",  // Empty language name shouldn't affect isEmpty
+          "[fr-x-ai-google]": "",  // Empty language name shouldn't affect hasMissingTranslations
           "[es-x-ai-acts2]": "Spanish",
           "[de-x-ai-google]": "German",
         },
@@ -259,19 +259,19 @@ describe("findAITargetColumns", () => {
         columnName: "[fr-x-ai-google]",
         languageCode: "fr",
         model: "google",
-        isEmpty: false,  // Should be false because all content rows are translated
+        hasMissingTranslations: false,  // Should be false because all content rows are translated
       },
       {
         columnName: "[es-x-ai-acts2]",
         languageCode: "es",
         model: "acts2",
-        isEmpty: false,
+        hasMissingTranslations: false,
       },
       {
         columnName: "[de-x-ai-google]",
         languageCode: "de",
         model: "google",
-        isEmpty: true,   // Should be true because content rows are missing translations
+        hasMissingTranslations: true,   // Should be true because content rows are missing translations
       },
     ]);
   });
@@ -370,7 +370,7 @@ describe("translateColumn", () => {
         { "[en]": "Hello", "[fr-x-ai-piglatin]": "" },
         { "[en]": "", "[fr-x-ai-piglatin]": "" },
         { "[en]": "World", "[fr-x-ai-piglatin]": "" },
-        { "[en]": "", "[fr-x-ai-piglatin]": "" }, // Changed from null to empty string
+        { "[en]": "", "[fr-x-ai-piglatin]": "" },
       ],
     };
 

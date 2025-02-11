@@ -51,10 +51,14 @@ Example:
   if (targetLangAndModel) {
     const columnName = `[${targetLangAndModel}]`;
 
-    // if shouldRetranslate is false and the column is already there, print something and quit
-    if (!shouldRetranslate && data.headers.includes(columnName)) {
+    // Find if the column exists and check if it's empty
+    const columns = findAITargetColumns(data);
+    const existingColumn = columns.find(col => col.columnName === columnName);
+
+    // Only prevent translation if the column exists and has no missing translations
+    if (!shouldRetranslate && existingColumn && !existingColumn.hasMissingTranslations) {
       console.error(
-        `Column ${columnName} already exists in the spreadsheet. Use --retranslate flag to overwrite.`
+        `Column ${columnName} already exists in the spreadsheet and has no missing translations. Use --retranslate flag to overwrite.`
       );
       process.exit(1);
     }
@@ -73,13 +77,13 @@ Example:
     console.log("Found ai columns:");
     for (const col of columns) {
       console.log(
-        `- ${col.columnName}: ${col.isEmpty ? "empty" : "has content"}${shouldRetranslate ? " (will retranslate)" : ""}`
+        `- ${col.columnName}: ${col.hasMissingTranslations ? "empty" : "has has no missing translations"}${shouldRetranslate ? " (will retranslate)" : ""}`
       );
     }
 
     // Translate selected columns
     for (const col of columns.filter(
-      (col) => col.isEmpty || shouldRetranslate
+      (col) => col.hasMissingTranslations || shouldRetranslate
     )) {
       console.log(`Translating ${col.columnName}...`);
       await translateColumn(

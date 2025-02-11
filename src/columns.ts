@@ -5,7 +5,7 @@ export interface TranslatableColumn {
   columnName: string;
   languageCode: string;
   model: string;
-  isEmpty: boolean;
+  hasMissingTranslations: boolean;
 }
 
 export function findAITargetColumns(
@@ -31,7 +31,7 @@ export function findAITargetColumns(
 
     // Check if any English cell is missing a corresponding translation
     // Skip the first row (index 0) since it contains language names
-    const needsTranslation = data.rows.some((row, index) => {
+    const hasMissingTranslations = data.rows.some((row, index) => {
       if (index === 0) return false; // Skip first row (language names)
       const englishText = row["[en]"];
       return englishText && !row[header]; // true if English exists but target is empty
@@ -41,7 +41,7 @@ export function findAITargetColumns(
       columnName: header,
       languageCode: langCode,
       model: model.toLowerCase(), // Store model in lowercase for consistency
-      isEmpty: needsTranslation,
+      hasMissingTranslations
     });
   }
 

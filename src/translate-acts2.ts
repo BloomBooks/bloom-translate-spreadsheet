@@ -8,6 +8,8 @@ export async function translateWithActs2(
     return [];
   }
 
+  console.log(`Acts2: Translating to language code ${languageCode}`);
+
   // Filter out empty strings to avoid API errors
   const textsToTranslate = englishTexts.filter((text) => text.trim() !== "");
   if (textsToTranslate.length === 0) {
@@ -84,6 +86,8 @@ export async function translateWithActs2(
   };
 
   const acts2LangCode = langCodeMap[languageCode.toLowerCase()] || languageCode;
+  console.log(`Acts2: Mapped language code ${languageCode} to ${acts2LangCode}`);
+  console.log(`Acts2: First text to translate: "${textsToTranslate[0]}"`);
 
   const root = "https://acts2.multilingualai.com/api/v2/text_collections";
 
@@ -103,6 +107,8 @@ export async function translateWithActs2(
 
   if (!createCollectionResponse.ok) {
     const errorText = await createCollectionResponse.text();
+    console.error(`Acts2: Create collection failed with status ${createCollectionResponse.status}`);
+    console.error(`Acts2: Error response: ${errorText}`);
     try {
       const errorJson = JSON.parse(errorText);
       throw new Error(
@@ -114,6 +120,7 @@ export async function translateWithActs2(
   }
 
   const collection = await createCollectionResponse.json();
+  console.log(`Acts2: Created collection with ID ${collection.id}`);
 
   // Translate the collection
   const translateResponse = await fetch(
@@ -129,6 +136,8 @@ export async function translateWithActs2(
 
   if (!translateResponse.ok) {
     const errorText = await translateResponse.text();
+    console.error(`Acts2: Translation request failed with status ${translateResponse.status}`);
+    console.error(`Acts2: Error response: ${errorText}`);
     try {
       const errorJson = JSON.parse(errorText);
       throw new Error(
@@ -140,13 +149,15 @@ export async function translateWithActs2(
   }
 
   const translateResult = await translateResponse.json();
-  //console.log(`translateResponse: ${JSON.stringify(translateResult)}`);
+  console.log(`Acts2: Translation request accepted`);
 
   // Poll for translations until they're ready
   const maxAttempts = 30;
   let attempts = 0;
   while (attempts < maxAttempts) {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before attempt
+    console.log(`Acts2: Checking translation status (attempt ${attempts + 1}/${maxAttempts})`);
+    
     const textsResponse = await fetch(
       `${root}/${collection.id}/texts?include_translations=true&target_language=${acts2LangCode}`,
       {
@@ -158,6 +169,8 @@ export async function translateWithActs2(
 
     if (!textsResponse.ok) {
       const errorText = await textsResponse.text();
+      console.error(`Acts2: Status check failed with status ${textsResponse.status}`);
+      console.error(`Acts2: Error response: ${errorText}`);
       try {
         const errorJson = JSON.parse(errorText);
         throw new Error(
@@ -169,32 +182,46 @@ export async function translateWithActs2(
     }
 
     const responseArray = await textsResponse.json();
+    console.log(`Acts2: Got response with ${responseArray?.length || 0} items`);
+    
     if (responseArray && Array.isArray(responseArray)) {
       // Map back to original array structure, preserving empty strings
       const translations = new Array(englishTexts.length).fill("");
       let translationIndex = 0;
+      let allComplete = true;
 
       for (let i = 0; i < englishTexts.length; i++) {
         if (englishTexts[i].trim() !== "") {
           const translation = responseArray[
             translationIndex
           ]?.translations?.find(
-            (t: any) => t.translation_status === "complete"
+            (t: any) => t.language_id === acts2LangCode
           );
-          if (translation?.text) {
+          
+          if (translation?.translation_status === "complete" && translation?.text) {
             translations[i] = translation.text;
+            console.log(`Acts2: Translation ${i}: "${englishTexts[i]}" -> "${translation.text}"`);
+          } else {
+            console.log(`Acts2: Translation ${i} status: ${translation?.translation_status}, waiting...`);
+            allComplete = false;
           }
           translationIndex++;
         }
       }
 
-      // Check if all non-empty texts have translations
-      if (translationIndex === textsToTranslate.length) {
+      // Only return if all translations are actually complete
+      if (allComplete && translationIndex === textsToTranslate.length) {
+        console.log(`Acts2: All translations complete. Final translations:`, translations);
         return translations;
       }
     }
 
     attempts++;
+    if (attempts >= maxAttempts) {
+      throw new Error(
+        "Translation timed out - translations did not complete within the expected time"
+      );
+    }
     continue;
   }
 

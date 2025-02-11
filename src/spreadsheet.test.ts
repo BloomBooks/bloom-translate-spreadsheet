@@ -50,8 +50,8 @@ describe("findTranslatableColumns", () => {
     const googleCol = result.find((c) => c.columnName === "[fr-x-ai-google]");
     const acts2Col = result.find((c) => c.columnName === "[es-x-ai-acts2]");
 
-    expect(googleCol?.isEmpty).toBe(true); // Should be true because third row is missing translation
-    expect(acts2Col?.isEmpty).toBe(true); // All cells empty except language name
+    expect(googleCol?.hasMissingTranslations).toBe(true); // Should be true because third row is missing translation
+    expect(acts2Col?.hasMissingTranslations).toBe(true); // All cells empty except language name
   });
 
   test("ignores second row when determining emptiness", () => {
@@ -64,7 +64,7 @@ describe("findTranslatableColumns", () => {
       ],
     };
     const result = findAITargetColumns(data);
-    expect(result[0].isEmpty).toBe(true);
+    expect(result[0].hasMissingTranslations).toBe(true);
   });
 
   test("handles spreadsheet with no translatable columns", () => {
