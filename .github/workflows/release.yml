@@ -1,0 +1,48 @@
+name: Create Release
+
+on:
+  workflow_dispatch:  # This makes it manual-launch only
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+      
+      - name: Run Tests
+        run: bun test
+        
+      - name: Build Executable
+        run: |
+          bun build index.ts --compile --target=bun-windows-x64 --outfile bts
+          chmod +x bts
+          
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./bts
+          asset_name: bts
+          asset_content_type: application/octet-stream
