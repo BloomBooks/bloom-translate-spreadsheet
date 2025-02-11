@@ -16,8 +16,22 @@ export async function translateToLanguage(
   englishTexts: string[],
   targetCode: string
 ): Promise<string[]> {
+  if (!targetCode) {
+    throw new Error("Target language code is required");
+  }
+
   const model = parseModelFromLanguageCode(targetCode);
+  if (!model) {
+    throw new Error(
+      `No supported translation model found in language code: ${targetCode}`
+    );
+  }
+
   const languageCode = targetCode.split("-")[0];
+  if (!languageCode) {
+    throw new Error(`Invalid language code format: ${targetCode}`);
+  }
+
   if (model === "google") {
     if (!process.env.BLOOM_GOOGLE_TRANSLATION_SERVICE_ACCOUNT_EMAIL) {
       throw new Error(

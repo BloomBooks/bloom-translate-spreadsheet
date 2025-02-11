@@ -1,8 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import {
-  parseModelFromLanguageCode,
-  translateToLanguage,
-} from "../src/translate";
+import { parseModelFromLanguageCode, translateToLanguage } from "./translate";
 
 describe("parseModelFromLanguageCode", () => {
   test("detects acts2 model", () => {
