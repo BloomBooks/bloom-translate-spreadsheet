@@ -29,14 +29,19 @@ export function findAITargetColumns(
     const supportedModels = ["google", "acts2", "piglatin"];
     if (!supportedModels.some((m) => m === model.toLowerCase())) continue;
 
-    // Check if column is empty (ignoring first row which contains language names)
-    const isEmpty = data.rows.slice(1).every((row) => !row[header]);
+    // Check if any English cell is missing a corresponding translation
+    // Skip the first row (index 0) since it contains language names
+    const needsTranslation = data.rows.some((row, index) => {
+      if (index === 0) return false; // Skip first row (language names)
+      const englishText = row["[en]"];
+      return englishText && !row[header]; // true if English exists but target is empty
+    });
 
     translatable.push({
       columnName: header,
       languageCode: langCode,
       model: model.toLowerCase(), // Store model in lowercase for consistency
-      isEmpty,
+      isEmpty: needsTranslation,
     });
   }
 

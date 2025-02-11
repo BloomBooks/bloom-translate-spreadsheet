@@ -163,6 +163,118 @@ describe("findAITargetColumns", () => {
       ["de", "es", "fr", "it"].sort()
     );
   });
+
+  test("should correctly identify columns needing translation", () => {
+    const data: SpreadsheetData = {
+      headers: [
+        "[en]",
+        "[fr-x-ai-google]",  // Partially translated
+        "[es-x-ai-acts2]",   // Fully translated
+        "[de-x-ai-google]",  // Missing some translations
+      ],
+      rows: [
+        {
+          "[en]": "English",
+          "[fr-x-ai-google]": "Français",
+          "[es-x-ai-acts2]": "Español",
+          "[de-x-ai-google]": "Deutsch",
+        },
+        {
+          "[en]": "Hello",
+          "[fr-x-ai-google]": "Bonjour",
+          "[es-x-ai-acts2]": "Hola",
+          "[de-x-ai-google]": "",  // Missing translation
+        },
+        {
+          "[en]": "World",
+          "[fr-x-ai-google]": "",  // Missing translation
+          "[es-x-ai-acts2]": "Mundo",
+          "[de-x-ai-google]": "Welt",
+        },
+      ],
+    };
+
+    const result = findAITargetColumns(data);
+
+    // Both fr and de columns should be marked as empty (needing translation)
+    // because they have at least one missing translation
+    expect(result).toEqual([
+      {
+        columnName: "[fr-x-ai-google]",
+        languageCode: "fr",
+        model: "google",
+        isEmpty: true,
+      },
+      {
+        columnName: "[es-x-ai-acts2]",
+        languageCode: "es",
+        model: "acts2",
+        isEmpty: false,
+      },
+      {
+        columnName: "[de-x-ai-google]",
+        languageCode: "de",
+        model: "google",
+        isEmpty: true,
+      },
+    ]);
+  });
+
+  test("should ignore first row (language names) when determining if translation is needed", () => {
+    const data: SpreadsheetData = {
+      headers: [
+        "[en]",
+        "[fr-x-ai-google]",  // Empty language name, filled translations
+        "[es-x-ai-acts2]",   // Filled language name, filled translations
+        "[de-x-ai-google]",  // Filled language name, missing translations
+      ],
+      rows: [
+        {
+          // First row (language names)
+          "[en]": "English",
+          "[fr-x-ai-google]": "",  // Empty language name shouldn't affect isEmpty
+          "[es-x-ai-acts2]": "Spanish",
+          "[de-x-ai-google]": "German",
+        },
+        {
+          // Content rows
+          "[en]": "Hello",
+          "[fr-x-ai-google]": "Bonjour",
+          "[es-x-ai-acts2]": "Hola",
+          "[de-x-ai-google]": "",  // Missing translation
+        },
+        {
+          "[en]": "World",
+          "[fr-x-ai-google]": "Monde",
+          "[es-x-ai-acts2]": "Mundo",
+          "[de-x-ai-google]": "",  // Missing translation
+        },
+      ],
+    };
+
+    const result = findAITargetColumns(data);
+
+    expect(result).toEqual([
+      {
+        columnName: "[fr-x-ai-google]",
+        languageCode: "fr",
+        model: "google",
+        isEmpty: false,  // Should be false because all content rows are translated
+      },
+      {
+        columnName: "[es-x-ai-acts2]",
+        languageCode: "es",
+        model: "acts2",
+        isEmpty: false,
+      },
+      {
+        columnName: "[de-x-ai-google]",
+        languageCode: "de",
+        model: "google",
+        isEmpty: true,   // Should be true because content rows are missing translations
+      },
+    ]);
+  });
 });
 
 describe("translateColumn", () => {

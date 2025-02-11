@@ -50,7 +50,7 @@ describe("findTranslatableColumns", () => {
     const googleCol = result.find((c) => c.columnName === "[fr-x-ai-google]");
     const acts2Col = result.find((c) => c.columnName === "[es-x-ai-acts2]");
 
-    expect(googleCol?.isEmpty).toBe(false); // Has some content
+    expect(googleCol?.isEmpty).toBe(true); // Should be true because third row is missing translation
     expect(acts2Col?.isEmpty).toBe(true); // All cells empty except language name
   });
 
