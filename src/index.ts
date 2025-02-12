@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import { createRequire } from "module";
 import { resolve, basename } from "node:path";
+import * as fs from "node:fs";
 import * as spreadsheet from "./spreadsheet";
 import { findAITargetColumns, translateColumn } from "./columns";
 import { log, setVerbose, verbose } from "./logging";
@@ -58,6 +59,29 @@ Example:
   // print out all the header cells
   verbose(`Headers: ${data.headers.join(", ")}`);
 
+  // Generate default output path in the current directory if not provided
+  const inputBasename = basename(inputSpreadsheetPath);
+  const defaultOutputPath = resolve(
+    process.cwd(),
+    inputBasename.replace(
+      /\.xlsx$/,
+      targetLangAndModel ? `-${targetLangAndModel}.xlsx` : "-translated.xlsx"
+    )
+  );
+  const outputPath = options.output
+    ? resolve(options.output)
+    : defaultOutputPath;
+
+  // check to see if the output file is writable before we go any further
+  try {
+    fs.closeSync(fs.openSync(outputPath, 'w'));
+  } catch (error) {
+
+    console.error(`Output file ${outputPath} is not writable. Make sure it isn't open in another program.`);
+    process.exit(1);
+  }
+
+
   // If target is provided, translate just that column
   if (targetLangAndModel) {
     const columnName = `[${targetLangAndModel}]`;
@@ -89,7 +113,7 @@ Example:
     log("Found ai columns:");
     for (const col of columns) {
       log(
-        `- ${col.columnName}: ${col.hasMissingTranslations ? "empty" : "has has no missing translations"}${shouldRetranslate ? " (will retranslate)" : ""}`
+        `- ${col.columnName}: ${col.hasMissingTranslations ? "has empty cells" : "has has no missing translations"}${shouldRetranslate ? " (will retranslate)" : ""}`
       );
     }
 
@@ -105,19 +129,6 @@ Example:
       );
     }
   }
-
-  // Generate default output path in the current directory if not provided
-  const inputBasename = basename(inputSpreadsheetPath);
-  const defaultOutputPath = resolve(
-    process.cwd(),
-    inputBasename.replace(
-      /\.xlsx$/,
-      targetLangAndModel ? `-${targetLangAndModel}.xlsx` : "-translated.xlsx"
-    )
-  );
-  const outputPath = options.output
-    ? resolve(options.output)
-    : defaultOutputPath;
 
   verbose(`Writing output to: ${outputPath}`);
   // Write the modified data back to a spreadsheet
