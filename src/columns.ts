@@ -1,5 +1,6 @@
 import type { SpreadsheetData } from "./spreadsheet";
 import { translateToLanguage } from "./translate";
+import { verbose } from "./index";
 
 export interface TranslatableColumn {
   columnName: string;
@@ -12,30 +13,58 @@ export function findAITargetColumns(
   data: SpreadsheetData
 ): TranslatableColumn[] {
   const translatable: TranslatableColumn[] = [];
+  
+  verbose(`Found headers: ${JSON.stringify(data.headers)}`);
 
   for (const header of data.headers) {
+    verbose(`Analyzing header: ${header}`);
     // Look for headers in the format [lang-x-ai-model], case insensitive for 'x' and 'ai'
     const match = header.match(/^\[(.*?-[xX]-(?:[aA][iI])-[^-\]]+)\]$/);
-    if (!match) continue;
+    if (!match) {
+      verbose(`  Header ${header} did not match basic pattern`);
+      continue;
+    }
 
     const langWithModel = match[1];
     const parts = langWithModel.split("-");
-    if (parts.length !== 4) continue; // Must have exactly lang, x, ai, and model parts
+    verbose(`  Found parts: ${JSON.stringify(parts)}`);
+    
+    if (parts.length !== 4) {
+      verbose(`  Expected 4 parts but found ${parts.length}`);
+      continue;
+    }
 
     const [langCode, x, ai, model] = parts;
-    if (x.toLowerCase() !== "x" || ai.toLowerCase() !== "ai") continue;
+    if (x.toLowerCase() !== "x" || ai.toLowerCase() !== "ai") {
+      verbose(`  Invalid x/ai parts: ${x}, ${ai}`);
+      continue;
+    }
 
     // Skip if model is not one we support (case insensitive match)
     const supportedModels = ["google", "acts2", "piglatin"];
-    if (!supportedModels.some((m) => m === model.toLowerCase())) continue;
+    if (!supportedModels.some((m) => m === model.toLowerCase())) {
+      verbose(`  Unsupported model: ${model}`);
+      continue;
+    }
+
+    verbose(`Analyzing column ${header} for missing translations`);
 
     // Check if any English cell is missing a corresponding translation
     // Skip the first row (index 0) since it contains language names
     const hasMissingTranslations = data.rows.some((row, index) => {
       if (index === 0) return false; // Skip first row (language names)
       const englishText = row["[en]"];
-      return englishText && !row[header]; // true if English exists but target is empty
+      const targetText = row[header];
+      if (englishText && !targetText) {
+        verbose(`Found missing translation at row ${index + 1}:`);
+        verbose(`  English: "${englishText}"`);
+        verbose(`  ${header}: <empty>`);
+        return true;
+      }
+      return false;
     });
+
+    verbose(`Column ${header} has${hasMissingTranslations ? "" : " no"} missing translations`);
 
     translatable.push({
       columnName: header,

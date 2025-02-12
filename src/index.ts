@@ -8,6 +8,18 @@ import { findAITargetColumns, translateColumn } from "./columns";
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
 
+let isVerbose = false;
+
+export function log(message: string) {
+  console.log(message);
+}
+
+export function verbose(message: string) {
+  if (isVerbose) {
+    console.log(message);
+  }
+}
+
 async function main() {
   const program = new Command();
 
@@ -27,6 +39,10 @@ async function main() {
       "--retranslate",
       "If this is provided, then columns will be replaced if they already exist. Otherwise, the program will not re-translate."
     )
+    .option(
+      "-v,--verbose",
+      "Enable verbose logging"
+    )
     .version(version)
     .addHelpText(
       "after",
@@ -40,16 +56,23 @@ Example:
   program.parse();
 
   const options = program.opts();
+  isVerbose = options.verbose ?? false;
   const targetLangAndModel = options.target;
   const shouldRetranslate = options.retranslate;
   const inputPath = resolve(program.args[0]);
 
+  verbose(`Starting translation process with verbose logging enabled`);
+  verbose(`Input path: ${inputPath}`);
+
   // Read the spreadsheet data
   const data = await spreadsheet.read(inputPath);
+  // print out all the header cells
+  verbose(`Headers: ${data.headers.join(", ")}`);
 
   // If target is provided, translate just that column
   if (targetLangAndModel) {
     const columnName = `[${targetLangAndModel}]`;
+    verbose(`Target language and model specified: ${targetLangAndModel}`);
 
     // Find if the column exists and check if it's empty
     const columns = findAITargetColumns(data);
@@ -57,7 +80,7 @@ Example:
 
     // Only prevent translation if the column exists and has no missing translations
     if (!shouldRetranslate && existingColumn && !existingColumn.hasMissingTranslations) {
-      console.error(
+      log(
         `Column ${columnName} already exists in the spreadsheet and has no missing translations. Use --retranslate flag to overwrite.`
       );
       process.exit(1);
@@ -69,14 +92,14 @@ Example:
     const columns = findAITargetColumns(data);
 
     if (columns.length === 0) {
-      console.log("No translatable columns found in the spreadsheet.");
+      log("No translatable columns found in the spreadsheet.");
       process.exit(0);
     }
 
     // Report what we are going to do with each
-    console.log("Found ai columns:");
+    log("Found ai columns:");
     for (const col of columns) {
-      console.log(
+      log(
         `- ${col.columnName}: ${col.hasMissingTranslations ? "empty" : "has has no missing translations"}${shouldRetranslate ? " (will retranslate)" : ""}`
       );
     }
@@ -85,7 +108,7 @@ Example:
     for (const col of columns.filter(
       (col) => col.hasMissingTranslations || shouldRetranslate
     )) {
-      console.log(`Translating ${col.columnName}...`);
+      log(`Translating ${col.columnName}...`);
       await translateColumn(
         data,
         col.columnName,
@@ -107,9 +130,10 @@ Example:
     ? resolve(options.output)
     : defaultOutputPath;
 
+  verbose(`Writing output to: ${outputPath}`);
   // Write the modified data back to a spreadsheet
   await spreadsheet.write(data, outputPath);
-  console.log(`Translated spreadsheet saved to: ${outputPath}`);
+  log(`Translated spreadsheet saved to: ${outputPath}`);
 }
 
 main().catch(console.error);
