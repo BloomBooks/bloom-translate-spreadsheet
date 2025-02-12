@@ -29,8 +29,28 @@ export async function read(
   }
 
   const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json<Row>(sheet);
-  const headers = Object.keys(rows[0] || {});
+
+  // Get the range of the sheet
+  const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
+
+  // Get headers from the first row
+  const headers: string[] = [];
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col });
+    const cell = sheet[cellAddress];
+    headers.push(cell ? String(cell.v) : "");
+  }
+
+  // Remove any empty headers from the end (but keep empty ones in the middle)
+  while (headers.length > 0 && headers[headers.length - 1] === "") {
+    headers.pop();
+  }
+
+  // Now get the data rows
+  const rows = XLSX.utils.sheet_to_json<Row>(sheet, {
+    header: headers,
+    defval: "" // Use empty string as default value for missing cells
+  });
 
   return { headers, rows };
 }

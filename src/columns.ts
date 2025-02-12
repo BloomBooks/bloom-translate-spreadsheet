@@ -13,7 +13,7 @@ export function findAITargetColumns(
   data: SpreadsheetData
 ): TranslatableColumn[] {
   const translatable: TranslatableColumn[] = [];
-  
+
   verbose(`Found headers: ${JSON.stringify(data.headers)}`);
 
   for (const header of data.headers) {
@@ -28,7 +28,7 @@ export function findAITargetColumns(
     const langWithModel = match[1];
     const parts = langWithModel.split("-");
     verbose(`  Found parts: ${JSON.stringify(parts)}`);
-    
+
     if (parts.length !== 4) {
       verbose(`  Expected 4 parts but found ${parts.length}`);
       continue;
