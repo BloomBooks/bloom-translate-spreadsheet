@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import { existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
-import type { HeaderAndRows } from "./columns";
+import type { HeaderAndRows, Row } from "./columns";
 
 
 export async function read(
@@ -59,9 +59,13 @@ export async function write(
     }
 
     const workbook = XLSX.utils.book_new();
-    const sheet = XLSX.utils.json_to_sheet(data.rows, {
-      header: data.headers,
-    });
+    console.log(`data: ${JSON.stringify(data, null, 2)}`);
+    const sheet = XLSX.utils.json_to_sheet(data.rows
+      , {
+        header: data.headers,
+        skipHeader: true // without this we get a duplicate header row
+      }
+    );
 
     XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
     XLSX.writeFile(workbook, outputPath);

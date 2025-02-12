@@ -95,34 +95,37 @@ export async function translateColumn(
   const enIndex = data.headers.indexOf("[en]");
   if (enIndex === -1) return false; // Exit if no [en] column exists
 
-  // Add new column if it doesn't exist
-  if (!data.headers.includes(columnName)) {
-    data.headers.splice(enIndex + 1, 0, columnName);
-  }
+
 
   // Get English texts to translate, including the first row (language name)
-  const textsToTranslate = data.rows.map((row) => row["[en]"]).filter((text) => text);
+  const textsToTranslate = data.rows.slice(2) // don't translate the first 2 rows (headers adn language names)
+    .map((row) => row["[en]"]).filter((text) => text);
 
   if (textsToTranslate.length === 0) {
-    // If no texts to translate, remove the column if we just added it
-    const columnIndex = data.headers.indexOf(columnName);
-    if (columnIndex !== -1) {
-      data.headers.splice(columnIndex, 1);
-    }
+    // // If no texts to translate, remove the column if we just added it
+    // const columnIndex = data.headers.indexOf(columnName);
+    // if (columnIndex !== -1) {
+    //   data.headers.splice(columnIndex, 1);
+    // }
     return false;
   }
 
   try {
     const translations = await translateToLanguage(textsToTranslate, targetLangAndModel);
 
-    // Map translations back to rows
+    // Add new column if it doesn't exist
+    if (!data.headers.includes(columnName)) {
+      data.headers.splice(enIndex + 1, 0, columnName);
+    }
+
+    // Map translations for this column back to into the spreadsheet grid
     let translationIndex = 0;
-    for (const row of data.rows) {
-      if (row["[en]"]) {
-        row[columnName] = translations[translationIndex++];
+    for (const cellInColumn of data.rows.slice(2)) { // skipping the first 2 rows (headers and language names)
+      if (cellInColumn["[en]"]) {
+        cellInColumn[columnName] = translations[translationIndex++];
       } else {
-        // For empty source texts, ensure target is undefined
-        delete row[columnName];
+        // For empty source texts, ensure target is emptied
+        delete cellInColumn[columnName];
       }
     }
     return true;// everything went well
@@ -131,11 +134,6 @@ export async function translateColumn(
       console.error(`Failed to translate column ${columnName}: ${error.message}`);
     } else {
       console.error(`Failed to translate column ${columnName}: ${String(error)}`);
-    }
-    // If translation fails, remove the column if we just added it
-    const columnIndex = data.headers.indexOf(columnName);
-    if (columnIndex !== -1 && !Object.values(data.rows[0]).some(v => v === columnName)) {
-      data.headers.splice(columnIndex, 1);
     }
     // Don't rethrow the error - silently fail as per test requirements
     return false;

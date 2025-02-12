@@ -136,6 +136,9 @@ Example:
     }
   }
 
+  // console.log("*********After all translation");
+  // console.log("data: " + JSON.stringify(data, null, 2));
+
   if (!didTranslateSomethingSuccesfully) {
     log("No translations were made.");
     process.exit(0);
