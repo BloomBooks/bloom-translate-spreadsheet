@@ -72,15 +72,18 @@ Example:
     ? resolve(options.output)
     : defaultOutputPath;
 
-  // check to see if the output file is writable before we go any further
+  // Check to see if the output file is writable before we go any further. Might as well remove it too so that
+  // if something goes wrong and we don't notice the error, we don't distribute a file that doesn't have the
+  // work done on it that we thought it did.
   try {
-    fs.closeSync(fs.openSync(outputPath, 'w'));
+    // if it exists
+    if (fs.existsSync(outputPath))
+      fs.rmSync(outputPath);
   } catch (error) {
-
     console.error(`Output file ${outputPath} is not writable. Make sure it isn't open in another program.`);
     process.exit(1);
   }
-
+  let didTranslateSomethingSuccesfully = false;
 
   // If target is provided, translate just that column
   if (targetLangAndModel) {
@@ -99,7 +102,9 @@ Example:
       process.exit(1);
     }
 
-    await translateColumn(data, columnName, targetLangAndModel);
+    if (await translateColumn(data, columnName, targetLangAndModel))
+      didTranslateSomethingSuccesfully = true;
+
   } else {
     // Find all translatable columns
     const columns = findAITargetColumns(data);
@@ -122,14 +127,19 @@ Example:
       (col) => col.hasMissingTranslations || shouldRetranslate
     )) {
       log(`Translating ${col.columnName}...`);
-      await translateColumn(
+      if (await translateColumn(
         data,
         col.columnName,
         `${col.languageCode}-x-ai-${col.model}`
-      );
+      ))
+        didTranslateSomethingSuccesfully = true;
     }
   }
 
+  if (!didTranslateSomethingSuccesfully) {
+    log("No translations were made.");
+    process.exit(0);
+  }
   verbose(`Writing output to: ${outputPath}`);
   // Write the modified data back to a spreadsheet
   await spreadsheet.write(data, outputPath);

@@ -90,10 +90,10 @@ export async function translateColumn(
   data: HeaderAndRows,
   columnName: string,
   targetLangAndModel: string
-) {
+): Promise<boolean> {
   // Find the position of [en] column
   const enIndex = data.headers.indexOf("[en]");
-  if (enIndex === -1) return; // Exit if no [en] column exists
+  if (enIndex === -1) return false; // Exit if no [en] column exists
 
   // Add new column if it doesn't exist
   if (!data.headers.includes(columnName)) {
@@ -109,7 +109,7 @@ export async function translateColumn(
     if (columnIndex !== -1) {
       data.headers.splice(columnIndex, 1);
     }
-    return;
+    return false;
   }
 
   try {
@@ -125,12 +125,19 @@ export async function translateColumn(
         delete row[columnName];
       }
     }
+    return true;// everything went well
   } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Failed to translate column ${columnName}: ${error.message}`);
+    } else {
+      console.error(`Failed to translate column ${columnName}: ${String(error)}`);
+    }
     // If translation fails, remove the column if we just added it
     const columnIndex = data.headers.indexOf(columnName);
     if (columnIndex !== -1 && !Object.values(data.rows[0]).some(v => v === columnName)) {
       data.headers.splice(columnIndex, 1);
     }
     // Don't rethrow the error - silently fail as per test requirements
+    return false;
   }
 }

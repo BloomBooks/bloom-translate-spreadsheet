@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug Bun Script",
       "program": "${workspaceFolder}/src/index.ts",
-      "args": ["foo.xlsx", "--verbose"],
+      "args": ["foo.xlsx"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
       "watchMode": false
