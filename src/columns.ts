@@ -1,7 +1,16 @@
-import type { SpreadsheetData } from "./spreadsheet";
 import { translateToLanguage } from "./translate";
-import { verbose } from "./index";
+import { verbose } from "./logging";
 
+
+export interface HeaderAndRows {
+  headers: string[];
+  rows: Row[];
+}
+
+export interface Row {
+  "[en]": string;
+  [key: string]: any;
+}
 export interface TranslatableColumn {
   columnName: string;
   languageCode: string;
@@ -10,7 +19,7 @@ export interface TranslatableColumn {
 }
 
 export function findAITargetColumns(
-  data: SpreadsheetData
+  data: HeaderAndRows
 ): TranslatableColumn[] {
   const translatable: TranslatableColumn[] = [];
 
@@ -78,7 +87,7 @@ export function findAITargetColumns(
 }
 
 export async function translateColumn(
-  data: SpreadsheetData,
+  data: HeaderAndRows,
   columnName: string,
   targetLangAndModel: string
 ) {

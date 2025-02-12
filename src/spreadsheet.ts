@@ -1,26 +1,18 @@
 import * as XLSX from "xlsx";
 import { existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
+import type { HeaderAndRows } from "./columns";
 
-export interface Row {
-  "[en]": string;
-  [key: string]: any;
-}
-
-export interface SpreadsheetData {
-  headers: string[];
-  rows: Row[];
-}
 
 export async function read(
-  inputPath: string,
+  path: string,
   sheetName: string = "BloomBook"
-): Promise<SpreadsheetData> {
-  if (!existsSync(inputPath)) {
-    throw new Error(`Input file not found: ${inputPath}`);
+): Promise<HeaderAndRows> {
+  if (!existsSync(path)) {
+    throw new Error(`Input file not found: ${path}`);
   }
 
-  const workbook = XLSX.readFile(inputPath);
+  const workbook = XLSX.readFile(path);
 
   if (!workbook.SheetNames.includes(sheetName)) {
     throw new Error(
@@ -56,7 +48,7 @@ export async function read(
 }
 
 export async function write(
-  data: SpreadsheetData,
+  data: HeaderAndRows,
   outputPath: string,
   sheetName: string = "BloomBook"
 ): Promise<void> {

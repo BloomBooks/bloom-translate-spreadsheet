@@ -2,14 +2,14 @@ import { expect, test, describe } from "bun:test";
 import {
   findAITargetColumns,
   translateColumn,
+  type HeaderAndRows,
   type TranslatableColumn,
 } from "./columns";
-import type { SpreadsheetData } from "./spreadsheet";
 
 describe("findAITargetColumns", () => {
   // Normal case: Various supported AI model columns
   test("should identify supported AI model columns", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [
         "[en]",
         "[fr-x-ai-google]",
@@ -57,7 +57,7 @@ describe("findAITargetColumns", () => {
 
   // Edge case: Empty spreadsheet
   test("should handle empty spreadsheet", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [],
       rows: [],
     };
@@ -67,7 +67,7 @@ describe("findAITargetColumns", () => {
 
   // Edge case: No AI columns
   test("should handle spreadsheet with no AI columns", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr]", "[es]", "Notes"],
       rows: [
         { "[en]": "English", "[fr]": "French", "[es]": "Spanish", Notes: "" },
@@ -79,7 +79,7 @@ describe("findAITargetColumns", () => {
 
   // Input validation: Unsupported model
   test("should ignore unsupported AI models", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-unknown]", "[es-x-ai-acts2]"],
       rows: [
         {
@@ -96,7 +96,7 @@ describe("findAITargetColumns", () => {
 
   // Edge case: Malformed column headers
   test("should handle malformed column headers", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [
         "[en]",
         "[fr]-x-ai-google",
@@ -118,7 +118,7 @@ describe("findAITargetColumns", () => {
 
   // Edge case: Multiple supported models for same language
   test("should handle multiple AI models for same language", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-google]", "[fr-x-ai-acts2]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-google]": "", "[fr-x-ai-acts2]": "" },
@@ -134,7 +134,7 @@ describe("findAITargetColumns", () => {
 
   // Input validation: Case sensitivity
   test("should handle case insensitivity in x-ai and model names", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [
         "[en]",
         "[fr-x-ai-GOOGLE]", // uppercase model
@@ -165,7 +165,7 @@ describe("findAITargetColumns", () => {
   });
 
   test("should correctly identify columns needing translation", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [
         "[en]",
         "[fr-x-ai-google]",  // Partially translated
@@ -221,7 +221,7 @@ describe("findAITargetColumns", () => {
   });
 
   test("should ignore first row (language names) when determining if translation is needed", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: [
         "[en]",
         "[fr-x-ai-google]",  // Empty language name, filled translations
@@ -280,7 +280,7 @@ describe("findAITargetColumns", () => {
 describe("translateColumn", () => {
   // Normal case: Translate to empty column
   test("should add new column and translate content", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-google]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-google]": "French" },
@@ -306,7 +306,7 @@ describe("translateColumn", () => {
 
   // Edge case: Empty source text
   test("should handle empty source texts", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-google]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-google]": "French" },
@@ -326,7 +326,7 @@ describe("translateColumn", () => {
 
   // Edge case: Column already exists
   test("should update existing column", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-piglatin]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-piglatin]": "French" },
@@ -346,7 +346,7 @@ describe("translateColumn", () => {
 
   // Edge case: No [en] column
   test("should handle missing [en] source column", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-piglatin]"],
       rows: [
         { "[en]": "", "[fr-x-ai-piglatin]": "French" },
@@ -363,7 +363,7 @@ describe("translateColumn", () => {
 
   // Edge case: Mixed content (empty and non-empty cells)
   test("should handle mixed content in source column", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-piglatin]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-piglatin]": "French" },
@@ -386,7 +386,7 @@ describe("translateColumn", () => {
 
   // Error handling: Invalid target language format
   test("should handle invalid target language format", async () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]"],
       rows: [{ "[en]": "English" }, { "[en]": "Hello" }],
     };

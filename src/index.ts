@@ -4,21 +4,10 @@ import { createRequire } from "module";
 import { resolve, basename } from "node:path";
 import * as spreadsheet from "./spreadsheet";
 import { findAITargetColumns, translateColumn } from "./columns";
+import { log, setVerbose, verbose } from "./logging";
 
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json");
-
-let isVerbose = false;
-
-export function log(message: string) {
-  console.log(message);
-}
-
-export function verbose(message: string) {
-  if (isVerbose) {
-    console.log(message);
-  }
-}
 
 async function main() {
   const program = new Command();
@@ -56,16 +45,16 @@ Example:
   program.parse();
 
   const options = program.opts();
-  isVerbose = options.verbose ?? false;
+  setVerbose(options.verbose ?? false);
   const targetLangAndModel = options.target;
   const shouldRetranslate = options.retranslate;
-  const inputPath = resolve(program.args[0]);
+  const inputSpreadsheetPath = resolve(program.args[0]);
 
   verbose(`Starting translation process with verbose logging enabled`);
-  verbose(`Input path: ${inputPath}`);
+  verbose(`Input path: ${inputSpreadsheetPath}`);
 
   // Read the spreadsheet data
-  const data = await spreadsheet.read(inputPath);
+  const data = await spreadsheet.read(inputSpreadsheetPath);
   // print out all the header cells
   verbose(`Headers: ${data.headers.join(", ")}`);
 
@@ -118,7 +107,7 @@ Example:
   }
 
   // Generate default output path in the current directory if not provided
-  const inputBasename = basename(inputPath);
+  const inputBasename = basename(inputSpreadsheetPath);
   const defaultOutputPath = resolve(
     process.cwd(),
     inputBasename.replace(
