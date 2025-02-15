@@ -20,10 +20,19 @@ jobs:
       
       - name: Run Tests
         run: bun test
+
+      - name: Set Version Number
+        id: version
+        run: |
+          BASE_VERSION=$(node -p "require('./package.json').version")
+          FULL_VERSION="${BASE_VERSION}.${GITHUB_RUN_NUMBER}"
+          echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+          # Update package.json with new version
+          node -e "const pkg=require('./package.json'); pkg.version='$FULL_VERSION'; fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2))"
         
       - name: Build Executable
         run: |
-          bun build index.ts --compile --target=bun-windows-x64 --outfile bts
+          bun build src/index.ts --compile --target=bun-windows-x64 --outfile bts
           # Windows builds automatically add .exe extension
           chmod +x bts.exe
           
@@ -33,8 +42,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
-          release_name: Release v${{ github.run_number }}
+          tag_name: v${{ env.FULL_VERSION }}
+          release_name: Release v${{ env.FULL_VERSION }}
           draft: false
           prerelease: false
           
