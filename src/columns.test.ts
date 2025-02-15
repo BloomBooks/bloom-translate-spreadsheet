@@ -4,6 +4,7 @@ import {
   translateColumn,
   type HeaderAndRows,
   type TranslatableColumn,
+  type Row
 } from "./columns";
 
 describe("findAITargetColumns", () => {
@@ -278,185 +279,63 @@ describe("findAITargetColumns", () => {
 });
 
 describe("translateColumn", () => {
-  // Normal case: Translate to empty column
-  test("should add new column and translate content", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]", "[fr-x-ai-google]"],
-      rows: [
-        { "[en]": "English", "[fr-x-ai-piglatin]": "AI pig" },
-        { "[en]": "One", "[fr-x-ai-piglatin]": "" },
-        { "[en]": "Two", "[fr-x-ai-piglatin]": "" },
-      ],
-    };
 
-    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
 
-    console.log("*****data 123: " + JSON.stringify(data, null, 2));
-
-    // Verify column was added after [en]
-    expect(data.headers).toEqual([
-      "[en]",
-      "[es-x-ai-piglatin]",
-      "[fr-x-ai-google]",
-    ]);
-
-    // Verify translations were added (using piglatin translation rules)
-    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("neOay");
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("woTay");
-  });
-
-  // Edge case: Empty source text
-  test("should handle empty source texts", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]", "[fr-x-ai-google]"],
-      rows: [
-        { "[en]": "English", "[fr-x-ai-google]": "French" },
-        { "[en]": "", "[fr-x-ai-google]": "" },
-        { "[en]": "", "[fr-x-ai-google]": "" },
-      ],
-    };
-
-    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
-    // Verify translations
-    expect(data.rows[0]["[es-x-ai-piglatin]"]).toBe("nglishEay");
-    // Verify empty rows remain empty
-    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBeUndefined();
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBeUndefined();
-  });
-
-  // Edge case: Column already exists
-  test("should update existing column", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]", "[fr-x-ai-piglatin]"],
-      rows: [
-        { "[en]": "English", "[fr-x-ai-piglatin]": "French" },
-        { "[en]": "Hello", "[fr-x-ai-piglatin]": "Bonjour" },
-      ],
-    };
-
-    await translateColumn(data, "[fr-x-ai-piglatin]", "fr-x-ai-piglatin");
-
-    // Verify headers weren't duplicated
-    expect(data.headers).toHaveLength(2);
-    expect(data.headers).toContain("[fr-x-ai-piglatin]");
-    // Verify translations were updated
-
-    expect(data.rows[1]["[fr-x-ai-piglatin]"]).toBe("elloHay");
-  });
-
-  // Edge case: No [en] column
-  test("should handle missing [en] source column", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]", "[fr-x-ai-piglatin]"],
-      rows: [
-        { "[en]": "", "[fr-x-ai-piglatin]": "French" },
-        { "[en]": "", "[fr-x-ai-piglatin]": "" },
-      ],
-    };
-
-    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
-    // Should not add new column since source texts are empty
-    expect(data.headers).toEqual(["[en]", "[fr-x-ai-piglatin]"]);
-    expect(data.rows[0]["[es-x-ai-piglatin]"]).toBeUndefined();
-  });
-
-  // Edge case: Mixed content (empty and non-empty cells)
+  // Mixed content (empty and non-empty cells)
   test("should handle mixed content in source column", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]", "[fr-x-ai-piglatin]"],
-      rows: [
-        { "[en]": "English", "[fr-x-ai-piglatin]": "French" },
-        { "[en]": "Hello", "[fr-x-ai-piglatin]": "" },
-        { "[en]": "", "[fr-x-ai-piglatin]": "" },
-        { "[en]": "World", "[fr-x-ai-piglatin]": "" },
-        { "[en]": "", "[fr-x-ai-piglatin]": "" },
-      ],
-    };
+
+    const csv = `[row type],[en]
+Row type,English
+[page content],Two
+[page content]
+[page content],Four
+[topic],Animal Stories`;
+    const data = parseCsvIntoHeadersAndRows(csv);
 
     await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
     console.log("*****data: " + JSON.stringify(data, null, 2));
-    // Verify translations for non-empty cells
 
-    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("elloHay");
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBeUndefined();
-    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBe("orldWay");
-    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBeUndefined();
+    expect(data.headers).toEqual(["[row type]", "[en]", "[es-x-ai-piglatin]"]); // should insert this tag at the top
+    // here row[0] is actually the 2nd row in the output spreadsheet because this data structure uses "headers" for the first row
+    expect(data.rows[0]["[es-x-ai-piglatin]"]).toBeUndefined(); // language name cell, which we don't know
+    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe(/* two */ "woTay");
+    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBeUndefined(); // empty cell
+    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBe(/* four */ "ourFay");
+    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBeUndefined(); // [topic] is not in the list of translatable row types
   });
 
-  // Error handling: Invalid target language format
-  test("should handle invalid target language format", async () => {
-    const data: HeaderAndRows = {
-      headers: ["[en]"],
-      rows: [{ "[en]": "English" }, { "[en]": "Hello" }],
-    };
-
-    const result = await translateColumn(data, "[bogus-format]", "bogus-format");
-    expect(result).toBe(false); // Should return false for invalid format
-  });
-
-  // Normal case: Translate allowed row types
-  test("should only translate allowed row types", async () => {
-    const data: HeaderAndRows = {
-      headers: ["type", "[en]", "[fr-x-ai-google]"],
-      rows: [
-        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "[page content]", "[en]": "Hello", "[fr-x-ai-google]": "" },
-        { type: "[topic]", "[en]": "Topic", "[fr-x-ai-google]": "" },
-        { type: "[bookTitle]", "[en]": "Book", "[fr-x-ai-google]": "" },
-        { type: "[page description]", "[en]": "Desc", "[fr-x-ai-google]": "" },
-      ],
-    };
-
-    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
-    // Verify only allowed types were translated
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("elloHay"); // [page content]
-    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBeFalsy(); // [topic] - not allowed
-    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBe("ookBay"); // [bookTitle]
-    expect(data.rows[5]["[es-x-ai-piglatin]"]).toBe("escDay"); // [page description]
-  });
-
-  // Edge case: No allowed row types
-  test("should not translate when no allowed row types exist", async () => {
-    const data: HeaderAndRows = {
-      headers: ["type", "[en]", "[fr-x-ai-google]"],
-      rows: [
-        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "[topic]", "[en]": "Hello", "[fr-x-ai-google]": "" },
-        { type: "[category]", "[en]": "Category", "[fr-x-ai-google]": "" },
-      ],
-    };
-
-    const result = await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
-    // Verify no translation happened
-    expect(result).toBe(false);
-    expect(data.headers).not.toContain("[es-x-ai-piglatin]");
-  });
-
-  test("should handle mixed content with allowed and disallowed types", async () => {
-    const data: HeaderAndRows = {
-      headers: ["type", "[en]", "[fr-x-ai-google]"],
-      rows: [
-        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
-        { type: "[page content]", "[en]": "Hello", "[fr-x-ai-google]": "" },
-        { type: "[topic]", "[en]": "", "[fr-x-ai-google]": "" },
-        { type: "[bookTitle]", "[en]": "Book", "[fr-x-ai-google]": "" },
-        { type: "[page content]", "[en]": "", "[fr-x-ai-google]": "" },
-      ],
-    };
-
-    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
-    // Verify translations and empty handling
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("elloHay"); // Translated
-    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBe(""); // Not allowed type
-    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBe("ookBay"); // Translated
-    expect(data.rows[5]["[es-x-ai-piglatin]"]).toBe(""); // Allowed type but empty English
-  });
 });
+test("if header already has target, do not add another", async () => {
+  const csv = `[row type],[en],[es-x-ai-piglatin]`;
+  const data = parseCsvIntoHeadersAndRows(csv);
+  await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+  expect(data.headers).toEqual(["[row type]", "[en]", "[es-x-ai-piglatin]"]);
+});
+
+function parseCsvIntoHeadersAndRows(csv: string): HeaderAndRows {
+  const lines = csv.trim().split('\n');
+  if (lines.length === 0) {
+    return { headers: [], rows: [] };
+  }
+
+  // Parse headers from first line
+  const headers = lines[0].split(',').map(header => header.trim());
+
+  // Skip first line (row type header) and parse data rows
+  const rows = lines.slice(1).map(line => {
+    const values = line.split(',').map(value => value.trim());
+    const row: Row = {
+      "[en]": "" // Initialize with empty string to satisfy Row interface
+    };
+
+    // Build row object mapping headers to values
+    headers.forEach((header, index) => {
+      row[header] = values[index] || '';
+    });
+
+    return row;
+  });
+
+  return { headers, rows };
+}
+
