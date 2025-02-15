@@ -98,6 +98,7 @@ export async function translateColumn(
 
 
   // Get English texts to translate, including the first row (language name)
+  //console.log("^^^^^^ data:" + JSON.stringify(data, null, 2));
   const textsToTranslate = data.rows.slice(2) // don't translate the first 2 rows (headers adn language names)
     .map((row) => row["[en]"]).filter((text) => text);
 

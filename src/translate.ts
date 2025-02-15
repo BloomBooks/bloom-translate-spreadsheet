@@ -67,6 +67,7 @@ export async function translateToLanguage(
     );
   }
   if (model === "piglatin") {
+    //console.log("**************** piglatin: " + JSON.stringify(englishTexts, null, 2));
     return englishTexts.map((text) => {
       if (!text) return "";
       return text

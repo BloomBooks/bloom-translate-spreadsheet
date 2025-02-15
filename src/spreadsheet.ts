@@ -59,7 +59,7 @@ export async function write(
     }
 
     const workbook = XLSX.utils.book_new();
-    console.log(`data: ${JSON.stringify(data, null, 2)}`);
+    //console.log(`data: ${JSON.stringify(data, null, 2)}`);
     const sheet = XLSX.utils.json_to_sheet(data.rows
       , {
         header: data.headers,

@@ -59,10 +59,11 @@ Example:
   // print out all the header cells
   verbose(`Headers: ${data.headers.join(", ")}`);
 
-  // Generate default output path in the current directory if not provided
+  // Generate default output path in the same directory as the input file
   const inputBasename = basename(inputSpreadsheetPath);
+  const inputDir = resolve(inputSpreadsheetPath, '..');
   const defaultOutputPath = resolve(
-    process.cwd(),
+    inputDir,
     inputBasename.replace(
       /\.xlsx$/,
       targetLangAndModel ? `-${targetLangAndModel}.xlsx` : "-translated.xlsx"

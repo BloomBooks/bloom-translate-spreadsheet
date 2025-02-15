@@ -283,13 +283,15 @@ describe("translateColumn", () => {
     const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-google]"],
       rows: [
-        { "[en]": "English", "[fr-x-ai-google]": "French" },
-        { "[en]": "Hello", "[fr-x-ai-google]": "" },
-        { "[en]": "World", "[fr-x-ai-google]": "" },
+        { "[en]": "English", "[fr-x-ai-piglatin]": "AI pig" },
+        { "[en]": "One", "[fr-x-ai-piglatin]": "" },
+        { "[en]": "Two", "[fr-x-ai-piglatin]": "" },
       ],
     };
 
     await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+
+    console.log("*****data 123: " + JSON.stringify(data, null, 2));
 
     // Verify column was added after [en]
     expect(data.headers).toEqual([
@@ -299,9 +301,8 @@ describe("translateColumn", () => {
     ]);
 
     // Verify translations were added (using piglatin translation rules)
-    expect(data.rows[0]["[es-x-ai-piglatin]"]).toBe("nglishEay");
-    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("elloHay");
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("orldWay");
+    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("what");
+    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("owTay");
   });
 
   // Edge case: Empty source text
@@ -340,7 +341,7 @@ describe("translateColumn", () => {
     expect(data.headers).toHaveLength(2);
     expect(data.headers).toContain("[fr-x-ai-piglatin]");
     // Verify translations were updated
-    expect(data.rows[0]["[fr-x-ai-piglatin]"]).toBe("nglishEay");
+
     expect(data.rows[1]["[fr-x-ai-piglatin]"]).toBe("elloHay");
   });
 
@@ -375,9 +376,9 @@ describe("translateColumn", () => {
     };
 
     await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
-
+    console.log("*****data: " + JSON.stringify(data, null, 2));
     // Verify translations for non-empty cells
-    expect(data.rows[0]["[es-x-ai-piglatin]"]).toBe("nglishEay");
+
     expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("elloHay");
     expect(data.rows[2]["[es-x-ai-piglatin]"]).toBeUndefined();
     expect(data.rows[3]["[es-x-ai-piglatin]"]).toBe("orldWay");

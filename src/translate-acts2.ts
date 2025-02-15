@@ -1,5 +1,8 @@
 import { log, verbose } from "./logging";
 
+// Powerscript CURL to get models
+// $headers = @{ 'accept' = 'application/json'; 'api_key' = $env:BLOOM_ACTS2_KEY }; Invoke-WebRequest -Uri 'https://acts2.multilingualai.com/api/v2/translation_models?src=eng&trg=wsg' -Headers $headers -Method GET
+
 export async function translateWithActs2(
   sourceTexts: string[],
   languageCode: string,
@@ -151,9 +154,8 @@ export async function translateWithActs2(
   // Poll for translations until they're ready
   const maxAttempts = 30; // TODO: Make this an option
   let attempts = 0;
-  const collectedTranslations: string[] = new Array(sourceTexts.length);
-  while (attempts < maxAttempts) {
 
+  while (attempts < maxAttempts) {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before attempt
     verbose(`Acts2: Checking translation status (attempt ${attempts + 1}/${maxAttempts})`);
 
@@ -184,38 +186,42 @@ export async function translateWithActs2(
     verbose(`Acts2: Got response with ${responseArray?.length || 0} items`);
 
     if (responseArray && Array.isArray(responseArray)) {
-      // Map back to original array structure, preserving empty strings
-      const translations = new Array(sourceTexts.length).fill("");
-      let translationIndex = 0;
-      let translationsComplete = 0;
+      const allComplete = responseArray.every((item) => {
+        const translation = item?.translations?.find(
+          (t: any) => t.language_id === acts2LangCode
+        );
+        return translation?.translation_status === "complete";
+      });
 
-      for (let i = 0; i < sourceTexts.length; i++) {
-        if (sourceTexts[i].trim() !== "") {
-          const translation = responseArray[
-            translationIndex
-          ]?.translations?.find(
-            (t: any) => t.language_id === acts2LangCode
-          );
+      const completeCount = responseArray.filter((item) => {
+        const translation = item?.translations?.find(
+          (t: any) => t.language_id === acts2LangCode
+        );
+        return translation?.translation_status === "complete";
+      }).length;
 
-          if (translation?.translation_status === "complete") {
-            if (collectedTranslations[i] != translation.text) // didn't get it previously
-            {
-              collectedTranslations[i] = translations[i] = translation.text;
-              log(`Acts2: [${i}] ✔️: "${sourceTexts[i].replaceAll("\n", "\\n").replaceAll("\r", "\\r")}" -> "${translation.text.replaceAll("\n", "\\n").replaceAll("\r", "\\r")}"`);
-            }
-            ++translationsComplete;
-          } else {
-            verbose(`Acts2: [${i}] ${translation?.translation_status}`);
-          }
-          translationIndex++;
-        }
-      }
-      console.log(`Acts2 ${acts2LangCode}: ${translationsComplete}/${textsToTranslate.length} complete after ${attempts + 1}/${maxAttempts} polls`);
-      // Only return if all translations are actually completed
-      if (translationsComplete === textsToTranslate.length) {
+      console.log(`Acts2 ${acts2LangCode}: ${completeCount}/${textsToTranslate.length} complete after ${attempts + 1}/${maxAttempts} polls`);
+
+      if (allComplete) {
         console.log(`Acts2: All translations complete for ${acts2LangCode}`);
-        verbose(`Final translations: ${translations}`);
-        return translations;
+
+        // Now collect all translations in order
+        const result = new Array(sourceTexts.length).fill("");
+        let translationIndex = 0;
+
+        for (let i = 0; i < sourceTexts.length; i++) {
+          if (sourceTexts[i].trim() !== "") {
+            const translation = responseArray[translationIndex]?.translations?.find(
+              (t: any) => t.language_id === acts2LangCode
+            );
+            result[i] = translation.text;
+            log(`Acts2: [${i}] ✔️: "${sourceTexts[i].replaceAll("\n", "\\n").replaceAll("\r", "\\r")}" -> "${translation.text.replaceAll("\n", "\\n").replaceAll("\r", "\\r")}"`);
+            translationIndex++;
+          }
+        }
+
+        verbose(`Final translations: ${result}`);
+        return result;
       }
     }
 
@@ -225,7 +231,6 @@ export async function translateWithActs2(
         "Translation timed out - translations did not complete within the expected time"
       );
     }
-    continue;
   }
 
   throw new Error(
