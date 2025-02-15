@@ -30,8 +30,9 @@ Basic usage:
 Options:
 
 - `-o, --output <path>` - Output Excel file path (default: {input-filename}-{language}.xlsx)
-- `--target <tag>` - BCP47 language code with model (default: fr-x-ai-google)
-- `--retranslate` - Replace existing columns if they already exist
+- `-t, --target <tag>` - BCP47 language code with model (default: fr-x-ai-google)
+- `-r, --retranslate` - Replace existing columns if they already exist
+- `-s, --source` - The source column to translate from (default: en)
 - `-V, --version` - Output the version number
 - `-h, --help` - Display help information
 

@@ -6,7 +6,8 @@
       "request": "launch",
       "name": "Debug Bun Script",
       "program": "${workspaceFolder}/src/index.ts",
-      "args": ["foo.xlsx"],
+      //"args": ["foo.xlsx"],
+      "args":["02 - Cat and Dog and the Ball/02 - Cat and Dog and the Ball.xlsx", "-t fr-x-ai-piglatin"],
       "cwd": "${workspaceFolder}",
       "stopOnEntry": false,
       "watchMode": false

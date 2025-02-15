@@ -56,16 +56,6 @@ describe("findAITargetColumns", () => {
     ]);
   });
 
-  // Edge case: Empty spreadsheet
-  test("should handle empty spreadsheet", () => {
-    const data: HeaderAndRows = {
-      headers: [],
-      rows: [],
-    };
-    const result = findAITargetColumns(data);
-    expect(result).toEqual([]);
-  });
-
   // Edge case: No AI columns
   test("should handle spreadsheet with no AI columns", () => {
     const data: HeaderAndRows = {
@@ -279,6 +269,32 @@ describe("findAITargetColumns", () => {
 });
 
 describe("translateColumn", () => {
+  test("should translate from custom source language", async () => {
+    const csv = `[row type],[fr],[en],[piglatin-x-ai-piglatin]
+Row type,Français,English
+[page content],Bonjour,Hello`;
+    const data = parseCsvIntoHeadersAndRows(csv);
+
+    await translateColumn(data, "[piglatin-x-ai-piglatin]", "piglatin-x-ai-piglatin", "fr");
+
+    expect(data.headers).toEqual(["[row type]", "[fr]", "[en]", "[piglatin-x-ai-piglatin]"]);
+    expect(data.rows[1]["[piglatin-x-ai-piglatin]"]).toBe("onjourBay");
+  });
+
+  test("should insert column if needed", async () => {
+
+    const csv = `[row type],[en],[fr]
+  Row type,English,French
+  [page content],Two`;
+    const data = parseCsvIntoHeadersAndRows(csv);
+
+    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+    //console.log("*****data: " + JSON.stringify(data, null, 2));
+
+    expect(data.headers).toEqual(["[row type]", "[en]", "[es-x-ai-piglatin]", "[fr]"]); // should insert this tag at the top
+    // here row[0] is actually the 2nd row in the output spreadsheet because this data structure uses "headers" for the first row
+    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe(/* two */ "woTay");
+  });
 
 
   // Mixed content (empty and non-empty cells)

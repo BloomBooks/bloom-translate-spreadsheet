@@ -3,7 +3,6 @@ import { existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import type { HeaderAndRows, Row } from "./columns";
 
-
 export async function read(
   path: string,
   sheetName: string = "BloomBook"
@@ -59,11 +58,9 @@ export async function write(
     }
 
     const workbook = XLSX.utils.book_new();
-    //console.log(`data: ${JSON.stringify(data, null, 2)}`);
-    const sheet = XLSX.utils.json_to_sheet(data.rows
-      , {
-        header: data.headers,
-        skipHeader: true // without this we get a duplicate header row
+    const sheet = XLSX.utils.json_to_sheet(data.rows.slice(1), // remove the first row, which is a duplicate of headers except missing any changes we made to the headers
+      {
+        header: data.headers
       }
     );
 

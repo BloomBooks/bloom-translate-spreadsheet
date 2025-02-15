@@ -26,6 +26,10 @@ async function main() {
       "BCP47 language code with model. If this is not provided, the program will look in the input spreadsheet for empty columns to translate."
     )
     .option(
+      "-s,--source <tag>",
+      "BCP47 language code for source column (default: en)"
+    )
+    .option(
       "-r,--retranslate",
       "If this is provided, then columns will be replaced if they already exist. Otherwise, the program will not re-translate."
     )
@@ -40,19 +44,22 @@ async function main() {
 Example:
   $ bloom-translate-spreadsheet foo.xlsx
   $ bloom-translate-spreadsheet foo.xlsx -t es-x-ai-google -o foo-with-spanish.xlsx
-  $ bloom-translate-spreadsheet foo.xlsx --target fr-x-ai-google --retranslate`
+  $ bloom-translate-spreadsheet foo.xlsx --target fr-x-ai-google --retranslate
+  $ bloom-translate-spreadsheet foo.xlsx --source fr --target es-x-ai-google`
     );
 
   program.parse();
 
   const options = program.opts();
   setVerbose(options.verbose ?? false);
-  const targetLangAndModel = options.target;
+  const targetLangAndModel = options.target.trim();
+  const sourceLang = options.source?.trim() ?? "en";
   const shouldRetranslate = options.retranslate;
   const inputSpreadsheetPath = resolve(program.args[0]);
 
   verbose(`Starting translation process with verbose logging enabled`);
   verbose(`Input path: ${inputSpreadsheetPath}`);
+  verbose(`Source language: ${sourceLang}`);
 
   // Read the spreadsheet data
   const data = await spreadsheet.read(inputSpreadsheetPath);
@@ -92,7 +99,7 @@ Example:
     verbose(`Target language and model specified: ${targetLangAndModel}`);
 
     // Find if the column exists and check if it's empty
-    const columns = findAITargetColumns(data);
+    const columns = findAITargetColumns(data, sourceLang);
     const existingColumn = columns.find(col => col.columnName === columnName);
 
     // Only prevent translation if the column exists and has no missing translations
@@ -103,12 +110,12 @@ Example:
       process.exit(1);
     }
 
-    if (await translateColumn(data, columnName, targetLangAndModel))
+    if (await translateColumn(data, columnName, targetLangAndModel, sourceLang))
       didTranslateSomethingSuccesfully = true;
 
   } else {
     // Find all translatable columns
-    const columns = findAITargetColumns(data);
+    const columns = findAITargetColumns(data, sourceLang);
 
     if (columns.length === 0) {
       log("No translatable columns found in the spreadsheet.");
@@ -131,14 +138,12 @@ Example:
       if (await translateColumn(
         data,
         col.columnName,
-        `${col.languageCode}-x-ai-${col.model}`
+        `${col.languageCode}-x-ai-${col.model}`,
+        sourceLang
       ))
         didTranslateSomethingSuccesfully = true;
     }
   }
-
-  // console.log("*********After all translation");
-  // console.log("data: " + JSON.stringify(data, null, 2));
 
   if (!didTranslateSomethingSuccesfully) {
     log("No translations were made.");
