@@ -95,8 +95,6 @@ export async function translateColumn(
   const enIndex = data.headers.indexOf("[en]");
   if (enIndex === -1) return false; // Exit if no [en] column exists
 
-
-
   // Get English texts to translate, including the first row (language name)
   //console.log("^^^^^^ data:" + JSON.stringify(data, null, 2));
   const textsToTranslate = data.rows.slice(2) // don't translate the first 2 rows (headers adn language names)
@@ -117,6 +115,8 @@ export async function translateColumn(
     // Add new column if it doesn't exist
     if (!data.headers.includes(columnName)) {
       data.headers.splice(enIndex + 1, 0, columnName);
+      // add the code for the new column to the first row
+      data.rows[0][columnName] = `[${targetLangAndModel}]`;
     }
 
     // Map translations for this column back to into the spreadsheet grid
