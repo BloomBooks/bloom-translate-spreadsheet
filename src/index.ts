@@ -22,11 +22,11 @@ async function main() {
       "Output Excel file path (default: {input-filename}-{language}.xlsx)"
     )
     .option(
-      "--target <tag>",
+      "-t,--target <tag>",
       "BCP47 language code with model. If this is not provided, the program will look in the input spreadsheet for empty columns to translate."
     )
     .option(
-      "--retranslate",
+      "-r,--retranslate",
       "If this is provided, then columns will be replaced if they already exist. Otherwise, the program will not re-translate."
     )
     .option(
@@ -39,7 +39,7 @@ async function main() {
       `
 Example:
   $ bloom-translate-spreadsheet foo.xlsx
-  $ bloom-translate-spreadsheet foo.xlsx --target es-x-ai-google -o foo-with-spanish.xlsx
+  $ bloom-translate-spreadsheet foo.xlsx -t es-x-ai-google -o foo-with-spanish.xlsx
   $ bloom-translate-spreadsheet foo.xlsx --target fr-x-ai-google --retranslate`
     );
 

@@ -301,8 +301,8 @@ describe("translateColumn", () => {
     ]);
 
     // Verify translations were added (using piglatin translation rules)
-    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("what");
-    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("owTay");
+    expect(data.rows[1]["[es-x-ai-piglatin]"]).toBe("neOay");
+    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("woTay");
   });
 
   // Edge case: Empty source text
@@ -392,10 +392,71 @@ describe("translateColumn", () => {
       rows: [{ "[en]": "English" }, { "[en]": "Hello" }],
     };
 
-    await translateColumn(data, "invalid-format", "invalid-format");
+    const result = await translateColumn(data, "[bogus-format]", "bogus-format");
+    expect(result).toBe(false); // Should return false for invalid format
+  });
 
-    // Should not modify the data structure
-    expect(data.headers).toEqual(["[en]"]);
-    expect(Object.keys(data.rows[0])).toEqual(["[en]"]);
+  // Normal case: Translate allowed row types
+  test("should only translate allowed row types", async () => {
+    const data: HeaderAndRows = {
+      headers: ["type", "[en]", "[fr-x-ai-google]"],
+      rows: [
+        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "[page content]", "[en]": "Hello", "[fr-x-ai-google]": "" },
+        { type: "[topic]", "[en]": "Topic", "[fr-x-ai-google]": "" },
+        { type: "[bookTitle]", "[en]": "Book", "[fr-x-ai-google]": "" },
+        { type: "[page description]", "[en]": "Desc", "[fr-x-ai-google]": "" },
+      ],
+    };
+
+    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+
+    // Verify only allowed types were translated
+    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("elloHay"); // [page content]
+    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBeFalsy(); // [topic] - not allowed
+    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBe("ookBay"); // [bookTitle]
+    expect(data.rows[5]["[es-x-ai-piglatin]"]).toBe("escDay"); // [page description]
+  });
+
+  // Edge case: No allowed row types
+  test("should not translate when no allowed row types exist", async () => {
+    const data: HeaderAndRows = {
+      headers: ["type", "[en]", "[fr-x-ai-google]"],
+      rows: [
+        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "[topic]", "[en]": "Hello", "[fr-x-ai-google]": "" },
+        { type: "[category]", "[en]": "Category", "[fr-x-ai-google]": "" },
+      ],
+    };
+
+    const result = await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+
+    // Verify no translation happened
+    expect(result).toBe(false);
+    expect(data.headers).not.toContain("[es-x-ai-piglatin]");
+  });
+
+  test("should handle mixed content with allowed and disallowed types", async () => {
+    const data: HeaderAndRows = {
+      headers: ["type", "[en]", "[fr-x-ai-google]"],
+      rows: [
+        { type: "type", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "lang", "[en]": "English", "[fr-x-ai-google]": "French" },
+        { type: "[page content]", "[en]": "Hello", "[fr-x-ai-google]": "" },
+        { type: "[topic]", "[en]": "", "[fr-x-ai-google]": "" },
+        { type: "[bookTitle]", "[en]": "Book", "[fr-x-ai-google]": "" },
+        { type: "[page content]", "[en]": "", "[fr-x-ai-google]": "" },
+      ],
+    };
+
+    await translateColumn(data, "[es-x-ai-piglatin]", "es-x-ai-piglatin");
+
+    // Verify translations and empty handling
+    expect(data.rows[2]["[es-x-ai-piglatin]"]).toBe("elloHay"); // Translated
+    expect(data.rows[3]["[es-x-ai-piglatin]"]).toBe(""); // Not allowed type
+    expect(data.rows[4]["[es-x-ai-piglatin]"]).toBe("ookBay"); // Translated
+    expect(data.rows[5]["[es-x-ai-piglatin]"]).toBe(""); // Allowed type but empty English
   });
 });

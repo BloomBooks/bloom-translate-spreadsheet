@@ -95,48 +95,60 @@ export async function translateColumn(
   const enIndex = data.headers.indexOf("[en]");
   if (enIndex === -1) return false; // Exit if no [en] column exists
 
-  // Get English texts to translate, including the first row (language name)
-  //console.log("^^^^^^ data:" + JSON.stringify(data, null, 2));
-  const textsToTranslate = data.rows.slice(2) // don't translate the first 2 rows (headers adn language names)
-    .map((row) => row["[en]"]).filter((text) => text);
+  // List of allowed row types to translate
+  const allowedRowTypes = ["[bookTitle]", "[book title]", "[page content]", "[page description]"];
 
-  if (textsToTranslate.length === 0) {
-    // // If no texts to translate, remove the column if we just added it
-    // const columnIndex = data.headers.indexOf(columnName);
-    // if (columnIndex !== -1) {
-    //   data.headers.splice(columnIndex, 1);
-    // }
+  // Determine if we have any valid rows to translate
+  const hasValidRows = data.rows.some(row => {
+    if (!row["[en]"]) return false;
+    const typeColumn = row["type"];
+    return !typeColumn || allowedRowTypes.includes(typeColumn);
+  });
+
+  if (!hasValidRows) {
     return false;
   }
+
+  // Get English texts to translate
+  const rowsToTranslate = data.rows
+    .map((row, index) => ({ row, originalIndex: index }))
+    .filter(({ row }) => {
+      if (!row["[en]"]) return false;
+      const typeColumn = row["type"];
+      return !typeColumn || allowedRowTypes.includes(typeColumn);
+    });
+
+  const textsToTranslate = rowsToTranslate.map(({ row }) => row["[en]"]);
 
   try {
     const translations = await translateToLanguage(textsToTranslate, targetLangAndModel);
 
     // Add new column if it doesn't exist
-    if (!data.headers.includes(columnName)) {
+    const columnIndex = data.headers.indexOf(columnName);
+    if (columnIndex === -1) {
+      // Insert new column after [en]
       data.headers.splice(enIndex + 1, 0, columnName);
-      // add the code for the new column to the first row
-      data.rows[0][columnName] = `[${targetLangAndModel}]`;
     }
 
-    // Map translations for this column back to into the spreadsheet grid
-    let translationIndex = 0;
-    for (const cellInColumn of data.rows.slice(2)) { // skipping the first 2 rows (headers and language names)
-      if (cellInColumn["[en]"]) {
-        cellInColumn[columnName] = translations[translationIndex++];
-      } else {
-        // For empty source texts, ensure target is emptied
-        delete cellInColumn[columnName];
+    // Initialize all cells to empty string for rows that have a type field
+    data.rows.forEach(row => {
+      if (row["type"] !== undefined) {
+        row[columnName] = "";
       }
-    }
-    return true;// everything went well
+    });
+
+    // Map translations back into the spreadsheet grid
+    rowsToTranslate.forEach(({ row, originalIndex }, translationIndex) => {
+      data.rows[originalIndex][columnName] = translations[translationIndex];
+    });
+
+    return true;
   } catch (error) {
     if (error instanceof Error) {
       console.error(`Failed to translate column ${columnName}: ${error.message}`);
     } else {
       console.error(`Failed to translate column ${columnName}: ${String(error)}`);
     }
-    // Don't rethrow the error - silently fail as per test requirements
     return false;
   }
 }
