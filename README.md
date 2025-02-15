@@ -97,6 +97,10 @@ bun test
 bun build index.ts --outfile bts
 ```
 
+### Github Actions and version numbers
+
+The first two semantic versioning components are stored in the `version` in package.json. The Github Release Action adds a build number to that. See `.github\workflows\release.yml`
+
 ## License
 
 MIT
