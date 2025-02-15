@@ -1,9 +1,8 @@
 import { expect, test, describe } from "bun:test";
-import { findAITargetColumns } from "../src/columns";
-import type { SpreadsheetData } from "../src/spreadsheet";
+import { findAITargetColumns, type HeaderAndRows } from "../src/columns";
 
 describe("findTranslatableColumns", () => {
-  const mockData: SpreadsheetData = {
+  const mockData: HeaderAndRows = {
     headers: [
       "[en]",
       "[fr-x-ai-google]",
@@ -55,7 +54,7 @@ describe("findTranslatableColumns", () => {
   });
 
   test("ignores second row when determining emptiness", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr-x-ai-google]"],
       rows: [
         { "[en]": "English", "[fr-x-ai-google]": "French" }, // Language name row
@@ -68,7 +67,7 @@ describe("findTranslatableColumns", () => {
   });
 
   test("handles spreadsheet with no translatable columns", () => {
-    const data: SpreadsheetData = {
+    const data: HeaderAndRows = {
       headers: ["[en]", "[fr]"],
       rows: [
         { "[en]": "English", "[fr]": "French" },

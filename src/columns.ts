@@ -91,51 +91,40 @@ export async function translateColumn(
   columnName: string,
   targetLangAndModel: string
 ): Promise<boolean> {
-  // Find the position of [en] column
-  const enIndex = data.headers.indexOf("[en]");
-  if (enIndex === -1) return false; // Exit if no [en] column exists
+  console.log(`data: ${JSON.stringify(data, null, 2)}`);
+  const sourceColumnIndex = data.headers.indexOf("[en]");
+  if (sourceColumnIndex === -1) return false; // Exit if no [en] column exists
 
-  // List of allowed row types to translate
-  const allowedRowTypes = ["[bookTitle]", "[book title]", "[page content]", "[page description]"];
+  const translatableRowTypes = ["[bookTitle]", "[book title]", "[page content]", "[page description]"];
 
-  // Determine if we have any valid rows to translate
-  const hasValidRows = data.rows.some(row => {
-    if (!row["[en]"]) return false;
-    const typeColumn = row["type"];
-    return !typeColumn || allowedRowTypes.includes(typeColumn);
-  });
-
-  if (!hasValidRows) {
-    return false;
-  }
-
-  // Get English texts to translate
   const rowsToTranslate = data.rows
     .map((row, index) => ({ row, originalIndex: index }))
-    .filter(({ row }) => {
-      if (!row["[en]"]) return false;
-      const typeColumn = row["type"];
-      return !typeColumn || allowedRowTypes.includes(typeColumn);
-    });
-
+    .filter(({ row }) =>
+    //row["[en]"] && translatableRowTypes.includes(row["row type"])
+    {
+      console.log(`row["[en]"]: ${row["[en]"]}`);
+      console.log(`row["[row type]"]: ${row["[row type]"]}`);
+      return row["[en]"] && translatableRowTypes.includes(row["[row type]"])
+    }
+    );
   const textsToTranslate = rowsToTranslate.map(({ row }) => row["[en]"]);
+
+  // Bail out if there is nothing that we should be translating
+  if (textsToTranslate.length === 0) {
+    console.log(`No rows found to translate for column ${columnName}`);
+    return false;
+  }
 
   try {
     const translations = await translateToLanguage(textsToTranslate, targetLangAndModel);
 
     // Add new column if it doesn't exist
     const columnIndex = data.headers.indexOf(columnName);
+    console.log(`&&&&& columnIndex: ${columnIndex}`);
     if (columnIndex === -1) {
       // Insert new column after [en]
-      data.headers.splice(enIndex + 1, 0, columnName);
+      data.headers.splice(sourceColumnIndex + 1, 0, columnName);
     }
-
-    // Initialize all cells to empty string for rows that have a type field
-    data.rows.forEach(row => {
-      if (row["type"] !== undefined) {
-        row[columnName] = "";
-      }
-    });
 
     // Map translations back into the spreadsheet grid
     rowsToTranslate.forEach(({ row, originalIndex }, translationIndex) => {
