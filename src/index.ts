@@ -52,9 +52,9 @@ Example:
 
   const options = program.opts();
   setVerbose(options.verbose ?? false);
-  const targetLangAndModel = options.target.trim();
+  const targetLangAndModel = options.target?.trim();
   const sourceLang = options.source?.trim() ?? "en";
-  const shouldRetranslate = options.retranslate;
+  const shouldRetranslate = options.retranslate ?? false;
   const inputSpreadsheetPath = resolve(program.args[0]);
 
   verbose(`Starting translation process with verbose logging enabled`);

@@ -105,13 +105,13 @@ export async function translateColumn(
     return false;
   }
 
-  const translatableRowTypes = ["[bookTitle]", "[book title]", "[page content]", "[page description]"];
+  const translatableRowTypes = ["[bookTitle]", "[book title]", "[page content]", "[image description]"];
 
   const rowsToTranslate = data.rows
     .map((row, index) => ({ row, originalIndex: index }))
     .filter(({ row }) => {
-      console.log(`row[${sourceColumn}]: ${row[sourceColumn]}`);
-      console.log(`row["[row type]"]: ${row["[row type]"]}`);
+      // console.log(`row[${sourceColumn}]: ${row[sourceColumn]}`);
+      // console.log(`row["[row type]"]: ${row["[row type]"]}`);
       return row[sourceColumn] && translatableRowTypes.includes(row["[row type]"])
     });
   const textsToTranslate = rowsToTranslate.map(({ row }) => row[sourceColumn]);
@@ -127,7 +127,7 @@ export async function translateColumn(
 
     // Add new column if it doesn't exist
     const columnIndex = data.headers.indexOf(columnName);
-    console.log(`&&&&& columnIndex: ${columnIndex}`);
+    //console.log(`columnIndex: ${columnIndex}`);
     if (columnIndex === -1) {
       // Insert new column after source column
       data.headers.splice(sourceColumnIndex + 1, 0, columnName);
