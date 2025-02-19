@@ -1,17 +1,23 @@
 import * as XLSX from "xlsx";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import type { HeaderAndRows, Row } from "./columns";
+import { verbose } from "./logging";
 
 export async function read(
   path: string,
   sheetName: string = "BloomBook"
 ): Promise<HeaderAndRows> {
+
+
   if (!existsSync(path)) {
     throw new Error(`Input file not found: ${path}`);
   }
 
-  const workbook = XLSX.readFile(path);
+  // we cannot let xlsx do the reading because of some problem with compatibility
+  // with bun. this only shows up when compiled.
+  const contents = readFileSync(path, { encoding: "binary" });
+  const workbook = XLSX.read(contents, { type: 'binary' });
 
   if (!workbook.SheetNames.includes(sheetName)) {
     throw new Error(
@@ -65,7 +71,11 @@ export async function write(
     );
 
     XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
-    XLSX.writeFile(workbook, outputPath);
+
+    // we cannot let xlsx do the writing because of some problem with compatibility
+    // with bun. this only shows up when compiled.
+    const binary = XLSX.write(workbook, { type: "binary", bookType: "xlsx" });
+    writeFileSync(outputPath, binary, { encoding: "binary" });
   } catch (error: any) {
     if (error.code === "EBUSY" || error.errno === -16) {
       throw new Error(

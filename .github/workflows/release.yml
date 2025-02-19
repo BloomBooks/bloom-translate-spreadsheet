@@ -32,7 +32,7 @@ jobs:
         
       - name: Build Executable
         run: |
-          bun build src/index.ts --compile --target=bun-windows-x64 --outfile bts
+          bun build src/index.ts --compile --target=bun-windows-x64 --outfile bts --define VERSION=\"${{ env.FULL_VERSION }}\"
           # Windows builds automatically add .exe extension
           chmod +x bts.exe
           

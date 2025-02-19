@@ -1,16 +1,31 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
-import { createRequire } from "module";
-import { resolve, basename } from "node:path";
+import { resolve, basename, dirname } from "node:path";
 import * as fs from "node:fs";
 import * as spreadsheet from "./spreadsheet";
 import { findAITargetColumns, translateColumn } from "./columns";
 import { log, setVerbose, verbose } from "./logging";
+import { install } from "./install";
+import { spawn } from 'child_process';
 
-const require = createRequire(import.meta.url);
-const { version } = require("../package.json");
+// VERSION will be injected at compile time via --define
+declare const VERSION: string;
+const version = typeof VERSION !== 'undefined' ? VERSION : '0.0.0';
+
+// print out our entire commnand line arguments
+console.log(`Arguments: ${process.argv.join(" ")}`);
 
 async function main() {
+  if (process.platform === 'win32' && process.argv.includes('--install')) {
+    await install();
+    process.exit(0);
+  }
+
+  if (process.argv.includes('--ui')) {
+    await launchConsoleWindow();
+    return;
+  }
+
   const program = new Command();
 
   program
@@ -153,6 +168,55 @@ Example:
   // Write the modified data back to a spreadsheet
   await spreadsheet.write(data, outputPath);
   log(`Translated spreadsheet saved to: ${outputPath}`);
+
+
+
+  // print out all the arguments
+  log(`Arguments: ${process.argv.join(" ")}`);
+
+  // if running from --ui (as in "open with..." command), press enter to exit
+  //if (process.argv.includes('--uichild')) {
+  console.log("Press Enter to exit");
+  await new Promise<void>(resolve => {
+    process.stdin.on('data', () => {
+      process.stdin.pause();
+      resolve();
+    });
+  });
+  //}
 }
 
+
+async function launchConsoleWindow() {
+  process.exit(0);
+  if (process.platform === 'win32') {
+    // Get all arguments except --ui
+    const args = process.argv.slice(1).filter(arg => arg !== '--ui');
+
+    // Create the start command that will open a new console window
+    const startInfo = {
+      windowsVerbatimArguments: true,
+      shell: true,
+      stdio: 'inherit',
+      windowsHide: false
+    } satisfies import('child_process').SpawnOptions;
+
+
+    console.log(`Launching console window with args: ${args.join(' ')}`);
+
+    // Use cmd /k to keep the window open after execution
+    spawn(
+      'cmd',
+      ['/c', 'start', 'cmd', '/k', process.execPath, "--uichild", ...args],
+      startInfo
+    );
+
+    // Exit this process since we've spawned the real one
+    process.exit(0);
+  }
+}
+
+
 main().catch(console.error);
+
+

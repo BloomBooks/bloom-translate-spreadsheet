@@ -16,6 +16,7 @@
   "dependencies": {
     "@google-cloud/translate": "^8.5.0",
     "commander": "^13.1.0",
+    "winreg": "^1.2.5",
     "xlsx": "^0.18.5"
   }
 }

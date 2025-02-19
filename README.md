@@ -5,12 +5,15 @@ A command-line tool for translating Bloom spreadsheet content to different langu
 - Currently supports these translation services:
   - Google Translate (`-x-ai-google`)
   - Pig Latin (`-x-ai-piglatin`)
+- Windows integration: Appears in the "Open with" menu for .xlsx files (requires running with administrator privileges once)
 
 ## Installation
 
 Download the executable from the [Releases](../../releases) page of this repository:
 
 - Windows: `bts.exe`
+  - Run once with administrator privileges to enable integration with Windows "Open with" menu for .xlsx files
+  - After that, the program will appear as an option when right-clicking Excel files
 
 For Google Translate functionality, set these environment variables:
 
