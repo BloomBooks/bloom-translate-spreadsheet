@@ -2,15 +2,21 @@ import { translateWithGoogleTranslate } from "./translate-google";
 import { translateWithActs2 } from "./translate-acts2";
 import { translateWithDeepL } from "./translate-deepl";
 
-type TranslationModel = "google" | "acts2" | "deepl" | "piglatin";
+export enum TranslationModel {
+  Google = "google",
+  Acts2 = "acts2",
+  DeepL = "deepl",
+  PigLatin = "piglatin",
+}
 
 export function parseModelFromLanguageCode(
   langCode: string
 ): TranslationModel | null {
-  if (langCode.includes("-acts2")) return "acts2";
-  if (langCode.includes("-google")) return "google";
-  if (langCode.includes("-deepl")) return "deepl";
-  if (langCode.includes("-piglatin")) return "piglatin";
+  for (const model of Object.values(TranslationModel)) {
+    if (langCode.includes(`-${model}`)) {
+      return model;
+    }
+  }
   return null;
 }
 
@@ -34,7 +40,7 @@ export async function translateToLanguage(
     throw new Error(`Invalid language code format: ${targetCode}`);
   }
 
-  if (model === "google") {
+  if (model === TranslationModel.Google) {
     if (!process.env.BLOOM_GOOGLE_TRANSLATION_SERVICE_ACCOUNT_EMAIL) {
       throw new Error(
         "Translating with Google requires the environment variables: BLOOM_GOOGLE_TRANSLATION_SERVICE_ACCOUNT_EMAIL. After setting it (and also BLOOM_GOOGLE_SERVICE_PRIVATE_KEY), you may have to restart your terminal."
@@ -56,7 +62,7 @@ export async function translateToLanguage(
       )
     );
   }
-  if (model === "acts2") {
+  if (model === TranslationModel.Acts2) {
     if (!process.env.BLOOM_ACTS2_KEY) {
       throw new Error(
         "Translating with Acts2 requires the environment variable BLOOM_ACTS2_KEY. After setting it, you may have to restart your terminal."
@@ -68,7 +74,7 @@ export async function translateToLanguage(
       process.env.BLOOM_ACTS2_KEY
     );
   }
-  if (model === "deepl") {
+  if (model === TranslationModel.DeepL) {
     if (!process.env.BLOOM_DEEPL_API_KEY) {
       throw new Error(
         "Translating with DeepL requires the environment variable BLOOM_DEEPL_API_KEY. After setting it, you may have to restart your terminal."
@@ -80,7 +86,7 @@ export async function translateToLanguage(
       process.env.BLOOM_DEEPL_API_KEY
     );
   }
-  if (model === "piglatin") {
+  if (model === TranslationModel.PigLatin) {
     //console.log("**************** piglatin: " + JSON.stringify(englishTexts, null, 2));
     return englishTexts.map((text) => {
       if (!text) return "";

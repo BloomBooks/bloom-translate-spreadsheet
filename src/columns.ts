@@ -1,5 +1,6 @@
 import { translateToLanguage } from "./translate";
 import { verbose } from "./logging";
+import { TranslationModel } from "./translate";
 
 export interface HeaderAndRows {
   headers: string[];
@@ -56,7 +57,7 @@ export function findAITargetColumns(
     }
 
     // Skip if model is not one we support (case insensitive match)
-    const supportedModels = ["google", "acts2", "piglatin"];
+    const supportedModels = Object.values(TranslationModel);
     if (!supportedModels.some((m) => m === model.toLowerCase())) {
       verbose(`  Unsupported model: ${model}`);
       continue;
