@@ -4,6 +4,8 @@ A command-line tool for translating Bloom spreadsheet content to different langu
 
 - Currently supports these translation services:
   - Google Translate (`-x-ai-google`)
+  - Acts 2 (`-x-ai-acts2`)
+  - DeepL (`-x-ai-deepl`)
   - Pig Latin (`-x-ai-piglatin`)
 - Windows integration: Appears in the "Open with" menu for .xlsx files (requires running with administrator privileges once)
 
@@ -13,12 +15,17 @@ Download the executable from the [Releases](../../releases) page of this reposit
 
 - Windows: `bts.exe`
   - Run once with administrator privileges to enable integration with Windows "Open with" menu for .xlsx files
-  - After that, the program will appear as an option when right-clicking Excel files
+  - After that, the program will appear as an option when right-clicking Excel files. Click "Choose another app", then "bts.exe", and then choose "Just Once" to avoid having bloom-translation-spreadsheet become your default app for "opening" .xlsx files.
 
 For Google Translate functionality, set these environment variables:
 
 - `BLOOM_GOOGLE_TRANSLATION_SERVICE_ACCOUNT_EMAIL`
 - `BLOOM_GOOGLE_TRANSLATION_SERVICE_PRIVATE_KEY`
+
+For DeepL Translation functionality, set these environment variables:
+
+- `BLOOM_DEEPL_API_KEY`
+
   You will need to restart your terminal before it will see any changes you make to environment variables.
 
 ## Usage
@@ -97,7 +104,7 @@ bun test
 ### Build stand-alone exe
 
 ```bash
-bun build index.ts --outfile bts
+bun build src/index.ts --compile --target=bun-windows-x64 --outfile bts 
 ```
 
 ### Github Actions and version numbers

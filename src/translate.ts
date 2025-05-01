@@ -1,13 +1,15 @@
 import { translateWithGoogleTranslate } from "./translate-google";
 import { translateWithActs2 } from "./translate-acts2";
+import { translateWithDeepL } from "./translate-deepl";
 
-type TranslationModel = "google" | "acts2" | "piglatin";
+type TranslationModel = "google" | "acts2" | "deepl" | "piglatin";
 
 export function parseModelFromLanguageCode(
   langCode: string
 ): TranslationModel | null {
   if (langCode.includes("-acts2")) return "acts2";
   if (langCode.includes("-google")) return "google";
+  if (langCode.includes("-deepl")) return "deepl";
   if (langCode.includes("-piglatin")) return "piglatin";
   return null;
 }
@@ -64,6 +66,18 @@ export async function translateToLanguage(
       englishTexts,
       languageCode,
       process.env.BLOOM_ACTS2_KEY
+    );
+  }
+  if (model === "deepl") {
+    if (!process.env.BLOOM_DEEPL_API_KEY) {
+      throw new Error(
+        "Translating with DeepL requires the environment variable BLOOM_DEEPL_API_KEY. After setting it, you may have to restart your terminal."
+      );
+    }
+    return await translateWithDeepL(
+      englishTexts,
+      languageCode,
+      process.env.BLOOM_DEEPL_API_KEY
     );
   }
   if (model === "piglatin") {
